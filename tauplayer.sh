@@ -1,26 +1,27 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 #               Terminal Audio (tau) Player
-#         Copyright (c) 2024 <jarvenja@gmail.com>
+#         Copyright (c) 2025 <jarvenja@gmail.com>
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
-# About principles
-# - bash scripting has somewhat different rules than programming languages
-# - ...
+# About principles:
+# - bash scripting and bashism has somewhat different rules than true programming languages
 
 about () {
 	resetScreen "About"
-	print "Terminal Audio Player (${APP_NAME})\n\n"
+	print "Terminal Audio Player (${PRODUCT_NAME})\n\n"
 	print "The current version is ${VERSION}\n\n"
 	print "${COPYRIGHT}\n\n"
+	print "Your terminal type is '${TERM}',\n"
+	print "which may affect to display correct UI colors.\n\n"
 	print "Features:\n\n"
 	print "> Easy playing local playlists\n"
 	print "> Easy playing radio streams\n"
 	print "> Managing named collections of streams\n"
 	print "> Playback support via mplayer\n\n"
 	print "- Does not support spaces in file names.\n\n"
-	print "Your terminal type is '${TERM}',\n"
-	print "which may affect to display correct UI colors."
+	print "For more use information please see\n"
+	print "=> https://github.com/jarvenja/tauplayer/blob/main/README.md"
 	inputKey
 }
 
@@ -43,11 +44,25 @@ archive () { # collection
 	fi
 }
 
+catch () {
+	local code cmd lineno
+	code=$?
+	cmd="${BASH_COMMAND}"
+	lineno="${BASH_LINENO}"
+	printf "${YELLOW}The line %d: %s\nreturned %d\n${FG0}" "${lineno}" "${cmd}" "${code}"
+	# FixMe: Printing multiple lines...
+}
+
 changePlaylistDir () {
 	resetScreen "Change Playlist Directory"
 	print "Type full path to existing directory\n\n"
 	while :; do
 		read -r -p "> New directory: " -i "${PLAYLIST_DIR}" -e dir
+		if [ $? -ne 0 ]; then
+			log "Reading new directory name (${dir}) returned $?"
+			MSG="Read Error."
+			return
+		fi
 		if [ -z "${dir}" ] || [ "${dir}" == "${PLAYLIST_DIR}" ]; then
 			clearMsg
 			return
@@ -67,6 +82,7 @@ clearMsg () {
 collectionMenu () { # action
 	local c line
 	local -a entries
+	local -i retCode
 	while read -r line; do
 		c="${line##*/}"
 		c="${c%.cvs}"
@@ -74,7 +90,8 @@ collectionMenu () { # action
 	done < <(find "${COLLECTION_DIR}" -name "*.cvs" | sort)
     [ "${#entries[@]}" -eq 0 ] && fatal "No collections found in ${COLLECTION_DIR}."
 	clearMsg
-	tput civis # hides cursor
+	tput civis || terror
+	tryOff
 	c=$(dialog \
 		--stdout \
  		--backtitle "$(getTitle)" \
@@ -85,14 +102,16 @@ collectionMenu () { # action
 		--menu "\n${MSG}" 0 0 16 \
 		"${entries[@]}"
 	)
-	if [ "$?" -eq 0 ]; then
+	retCode=$?
+	tryOn
+	tput cnorm || terror
+	if [ "${retCode}" -eq 0 ]; then
 		case "${1}" in
 			Change) COLLECTION="${c}" ;;
 			Remove) archive "${c}" ;;
 			*) invalidArg "${1}" ;;
 		esac
 	fi
-	tput cnorm # unhide cursor
 }
 
 createCollection () { # validName
@@ -108,31 +127,29 @@ createCollection () { # validName
 
 die () {
 	popd > /dev/null
-	tput cnorm
-	tput init
+	tput cnorm || terror
+	tput init || terror
 	clear
 	saveSettings
-	echo "Bye!"
+	trap - ERR
+	echo "Until we hear again..."
 }
 
 ensureBash () {
 	local t
 	t=$(getShellType)
-	[ "${t}" != "bash" ] && fatal "Must be run by bash instead of ${t}"
+	[ "${t}" == "bash" ] || fatal "Must be run by bash instead of ${t}"
 }
 
-ensureCfg () {
-	[ -f "${DIALOGRC}" ] || fatal ".dialogrc file not found in directory!"
-	eval command -v mplayer &>/dev/null
-	[ $? -eq 0 ] && PLAYER="mplayer" || fatal "Please install required 'mplayer' first."
-	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
-	if [ -f "${SETTINGS}" ]; then
-		loadSettings "${SETTINGS}"
-	else # ensure tauplayer.cvs and ./collections/favorites.cvs
-		touch $(getCollectionPath "${COLLECTION1}")
-		COLLECTION="${COLLECTION1}"
-		PLAYLIST_DIR="${HOME}"
-		saveSettings
+ensureDependencies () {
+	local cmds
+	cmds=$(getMissingCommands "dialog" "${PLAYER}")
+	if [ -n "${cmds}" ]; then
+		echo "*** ${PRODUCT}"
+		echo -ne "\n${APPLICATION} requires the following commands to operate: ${RED}${cmds}${C0}\n"
+		echo "Please install missing dependencies and try again."
+		echo "=> sudo apt-get install ${cmds}"
+		fatal "Missing dependencies"
 	fi
 }
 
@@ -144,6 +161,19 @@ ensureFile () { # file
 	[ -f "${1}" ] || fatal "File ${1} not found!"
 }
 
+ensureFiles () {
+	[ -f "${DIALOGRC}" ] || fatal ".dialogrc file not found in directory!"
+	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
+	if [ -f "${SETTINGS}" ]; then
+		loadSettings "${SETTINGS}"
+	else # ensure tauplayer.cvs and ./collections/favorites.cvs
+		touch $(getCollectionPath "${COLLECTION1}")
+		COLLECTION="${COLLECTION1}"
+		PLAYLIST_DIR="${HOME}"
+		saveSettings
+	fi
+}
+
 ensureInternet () {
 	local code
 	code=$(getHttpResponseStatus "${GG}")
@@ -151,7 +181,7 @@ ensureInternet () {
 }
 
 error () { # msg
-	echo -ne "  ${YELLOW}Error: ${1}${FG0}" >&2
+	echo -ne " ${YELLOW}Error: ${1}${FG0}" >&2
 }
 
 fail () { # reason
@@ -213,7 +243,7 @@ getHttpResponseName () { # code
 		407) echo "Proxy Authentication Required" ;;
 		408) echo "Request Timeout" ;;
  		409) echo "Conflict" ;;
- 		410) echo "Gone" ;;
+	 	410) echo "Gone" ;;
 		411) echo "Length Required" ;;
  		412) echo "Precondition Failed" ;;
  		413) echo "Request Entity Too Large" ;;
@@ -261,14 +291,24 @@ getKeyValue () { # key
 	echo "${value}"
 }
 
+getMissingCommands () { # cmds...
+	local missing
+	missing=""
+	for cmd in "$@"; do
+		command -v "${cmd}" &>/dev/null
+		[ $? -eq 0 ] || missing+="${cmd} "
+	done
+	echo "${missing}"
+}
+
 getShellType () {
 	local x
 	x=$(ps -p $$)
-	echo "${x##* }"
+	[ $? -eq 0 ] && echo "${x##* }"
 }
 
 getTitle () {
-	echo -ne "${BGR} ${APP_NAME} ${VERSION} -=- [${COLLECTION}]"
+	echo -ne "${BGR} ${PRODUCT} -=- [${COLLECTION}]"
 }
 
 haspace () { # str
@@ -296,15 +336,15 @@ informUnavailability () { # streamName url code
 	print "Type: Stream\n"
 	print "Name: ${1}\n"
 	print " URL: ${2}\n\n"
-	responseName=$(getHttpResponseName "${code}")
+	responseName=$(getHttpResponseName "${3}")
 	print "HTTP ->"
-	fail "${code} ${responseName}"
+	fail "${3} ${responseName}"
 }
 
 inputKey () {
 	echo; echo
 	print ">> Press a key to continue..."
-	read -rsn 1
+	read -rsn 1 || log "Read Error inputKey"
 }
 
 inputNewCollection () {
@@ -386,12 +426,13 @@ loadSettings () { # settingsFile
 }
 
 log () { # msg
-	[ "${LOGGING}" == true ] && echo "${1}" >> "${LOG}"
+	[ "${LOGGING}" == true ] && echo "${1}" >> "${LOG}" || true
 }
 
 mainMenu () {
-	local -a menu
 	local action choice
+	local -a menu
+	local -i retCode
 	while :; do
 		menu=( \
 			"v" "Audio Settings..." \
@@ -408,9 +449,10 @@ mainMenu () {
 			"a" "Add New Stream..." \
 			"u" "Update Stream..." \
 			"d" "Remove Stream..." \
-			"i" "About ${APP_NAME}..."
+			"i" "About ${APPLICATION}..."
 		)
-		tput civis # hide cursor
+		tput civis || terror
+		tryOff
 		choice=$(dialog \
 			--stdout \
 			--backtitle "$(getTitle)" \
@@ -420,9 +462,11 @@ mainMenu () {
 			--ok-label "Select" \
 			--menu "\n${MSG}" 0 44 16 \
  			"${menu[@]}"
-			)
-    	[ $? -ne 0 ] && break
-		tput cnorm
+		)
+    	retCode=$?
+		tryOn
+		tput cnorm || terror
+		[ "${retCode}" -eq 0 ] || break
 		OPTIONS=()
 		case "${choice}" in
 			i) about ;;
@@ -444,18 +488,19 @@ mainMenu () {
 			*) invalidArg "${choice}" ;;
 		esac
 	done
-	tput cnorm # unhide cursor
 }
 
-play () { # playlist|name url
+play () { # {playlist|name} url
 	local keys label line mp3floats prev
+	echo "play ${1} ${2}"
 	if [ "${1}" = "${PLAYLIST}" ]; then
 		keys="printLocalKeys"
 		label="[>]"
 	else
 		keys="printStreamKeys"
-		label="(( A ))  ${1} @"
+		label="(( A ))  ${1} @" # broadcast
 	fi
+	tryOff # since interaction with 3rd party modules
 	$(echo -ne mplayer -msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg "${OPTIONS[@]}" "${2}") |
 	{	echo
 		mp3floats=false
@@ -488,6 +533,7 @@ play () { # playlist|name url
 			fi
   		done
 	}
+	tryOn # back to default
 }
 
 # FixMe!
@@ -497,7 +543,7 @@ playList () {
 	if [ -n "${url}" ]; then
 		[ "${USE_CACHE}" == true ] && OPTIONS+=(-cache "${CACHE_SIZE}" -cache-min "${CACHE_MIN}")
 		OPTIONS+=(-playlist)
-		printf '%s\n' "${OPTIONS[@]}"
+		# printf '%s\n' "${OPTIONS[@]}"
 		# log "playList <1> ${url}"
 		play "${PLAYLIST}" "${url}"
 	fi
@@ -506,6 +552,7 @@ playList () {
 playlistMenu () {
 	local f
 	local -a entries
+	local -i retCode
 	while read -r line; do
 		haspace "${line}" || entries+=("${line}" "")
 	done < <(find "${PLAYLIST_DIR}" -name "*.m3u" | sort)
@@ -513,7 +560,8 @@ playlistMenu () {
 		MSG="No playlists found."
 	else
 		clearMsg
-		tput civis # hide cursor
+		tput civis || terror
+		tryOff
 		f=$(dialog \
 			--stdout \
 			--clear \
@@ -524,6 +572,8 @@ playlistMenu () {
 			--menu "\n${MSG}" 0 0 16 \
  			"${entries[@]}"
 		)
+		retCode=$?
+		tryOn
 		tput cnorm # unhide cursor
 	    [ $? -eq 0 ] && echo "${f}"
 	fi
@@ -542,8 +592,7 @@ playStream () { # name url
 }
 
 print () { # line
-	# create one space margin
-	echo -ne " ${1}"
+	echo -ne " ${1}" # create one space margin
 }
 
 printBool () { # boolStr
@@ -596,23 +645,6 @@ printStreamKeys () {
 	echo -e "${HIGHLIGHT} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )   ${BBG}"
 }
 
-# FixMe!
-putStream () { # [name url]
-	local action file name new url
-	case "$#" in
-		0) action="Add New"; new=true ;;
-		2) action="Update"; new=false ;;
-		*) wrongArgCount "$@" ;;
-	esac
-	resetScreen "${action} Stream"
-	tput cnorm # FixMe! Actual problem code
-	read -p "> Name: " -i "${1}" -e name
-	read -p ">  URL: " -i "${2:-https://}" -e url
-	file=$(getCollectionPath)
-	[ new ] && addStream "${name}" "${url}" || $(sed -i "s|${1},${2}|${name},${url}|" "${file}")
-	[ $? -eq 0 ] && inform "Stream updated." || fail "Update failed."
-}
-
 removeCollection () {
 	local c
 	c=$(collectionMenu "Remove")
@@ -641,7 +673,7 @@ replaceKeyValue () { # key value filepath
 
 resetScreen () { # header
 	clear
-	echo -ne " ${GREEN}> ${APP_NAME} ${VERSION} -=- ${1}\n"
+	echo -ne "${BBG} ${GREEN}> ${PRODUCT} -=- ${1}\n"
 	horizon
 	echo; echo
 }
@@ -653,8 +685,9 @@ saveSettings () {
 
 start () {
 	# execute in appropriate order...
-	ensureCfg
-	log ">>> ${USER} started on $(date '+%a %d-%m-%Y %T')"
+	ensureFiles
+	ensureDependencies
+	# log ">>> ${USER} started on $(date '+%a %d-%m-%Y %T')"
 	ensureInternet
 	clearMsg
 	echo -e "${BBG}"
@@ -663,7 +696,7 @@ start () {
 
 streamMenu () { # action
 	local c line name url
-	local -i items
+	local -i items retCode
 	local -a streams=()
 	[ "${#1}" -ne 6 ] && fatal "Invalid action '${1}' in call!"
 	c=$(getCollectionPath)
@@ -677,7 +710,8 @@ streamMenu () { # action
 		return
 	fi
 	clearMsg
-	tput civis # hide cursor
+	tput civis || terror
+	tryOff
 	name=$(dialog \
 		--stdout \
 		--backtitle "$(getTitle)" \
@@ -687,7 +721,10 @@ streamMenu () { # action
 		--menu "\n${MSG}" 0 0 16 \
 		"${streams[@]}"
 	)
-   	if [ $? -eq 0 ]; then
+	retCode=$?
+	tryOn
+	tput cnorm || terror
+   	if [ "${retCode}" -eq 0 ]; then
 		# get url from array rather than file again
 		for ((i=0; i<items; i=i+2)); do
 			if [ "${streams[${i}]}" == "${name}" ]; then
@@ -702,14 +739,13 @@ streamMenu () { # action
 			*) invalidArg "${1}" ;;
 		esac
 	fi
-	tput cnorm # unhide cursor
 }
 
-# TODO Cancel input
-#terminate () {
-#	echo "User interruption."
-#	quit
-#}
+terror () {
+	# TODO Some detailed error handling
+	# See https://www.tutorialspoint.com/unix_commands/tput.htm
+	error "tput returned $?"
+}
 
 toggleCache () {
 	[ "${USE_CACHE}" == true ] && USE_CACHE=false || USE_CACHE=true
@@ -719,10 +755,35 @@ toggleModuleInfo () {
 	[ "${MODULE_INFO}" == true ] && MODULE_INFO=false || MODULE_INFO=true
 }
 
+tryOff () {
+	set +eE
+}
+
+tryOn () {
+	set -eE
+}
+
+# FixMe!
+updateStream () { # [name url]
+	local action file name new url
+	case "$#" in
+		0) action="Add New"; new=true ;;
+		2) action="Update"; new=false ;;
+		*) wrongArgCount "$@" ;;
+	esac
+	resetScreen "${action} Stream"
+	tput cnorm || terror
+	read -p "> Name: " -i "${1}" -e name
+	read -p ">  URL: " -i "${2:-https://}" -e url
+	file=$(getCollectionPath)
+	[ new ] && addStream "${name}" "${url}" || $(sed -i "s|${1},${2}|${name},${url}|" "${file}")
+	[ $? -eq 0 ] && inform "Stream updated." || fail "Update failed."
+}
+
 usage () {
-	echo "*** ${APP_NAME} ${VERSION} - ${COPYRIGHT}"
-	echo; echo "First run setup.sh to install missing dependencies."
-	echo; echo "Usage: ${0} [--help]"
+	echo "*** ${PRODUCT} - ${COPYRIGHT}"
+	echo
+	echo "Usage: bash ${0} [--help]"
 	echo "        (no args)    starts the application"
 	echo "        --help       show this information"
 }
@@ -732,23 +793,27 @@ wrongArgCount () { # args...
 }
 
 ### App info
-readonly APP_NAME="tau Player"
-readonly COPYRIGHT="Copyright 2024 J. Järvenpää <jarvenja@gmail.com>"
-readonly VERSION="v0.1 (beta)"
+readonly APPLICATION="${0::-3}"
+readonly VERSION="v0.2 (beta)"
+readonly COPYRIGHT="Copyright 2025 J. Järvenpää <jarvenja@gmail.com>"
+readonly PRODUCT_NAME="tau Player"
+readonly PRODUCT="${PRODUCT_NAME} ${VERSION}"
 ### Colors
 DIALOGRC=".dialogrc"
 export DIALOGRC
-readonly BAR="\e[0;42m" # key labels
-readonly BBG="\e[48;5;0m" # black bg
+readonly BAR="\e[0;42m"		# key labels when playing
+readonly BBG="\e[48;5;0m"	# black bg
 readonly BG0="\e[49m"
-readonly C0="\e[42m"
+#readonly C0="\e[42m"
+readonly C0="\e[0m"
 readonly FG="\e[38;5;"
 readonly FG0="\e[39m"
-readonly FGC="\e[0;92m" # default
+readonly FGC="\e[0;92m"		# default
 readonly GREEN="\e[38;5;2m" # default text color
-readonly RED="\e[1;91m" # error color
-readonly HIGHLIGHT="\e[37m" #38;5;248m"
-readonly YELLOW="\e[1;93m" # failures, warnings
+readonly RED="\e[1;91m"		# error color
+readonly HIGHLIGHT="\e[37m"	#38;5;248m"
+readonly PURPLE="\e[95m"	# syntax error
+readonly YELLOW="\e[0;93m"	# failures, warnings
 readonly WHITE="\e[1;97m"
 ### Special chars
 readonly BGR="\u2261"
@@ -759,21 +824,29 @@ readonly COLLECTION_DIR="./collections"
 readonly COLLECTION1="favorites"
 readonly FILENAME_CHAR="[a-zA-Z0-9\-]"
 readonly GG="https://www.google.com"
-readonly LOG="./tauplayer.log"
+readonly LOG="./${APPLICATION}.log"
 readonly PLAYLIST="PLAYLIST;" # placeholder key
 ### Settings
-readonly SETTINGS="./tauplayer.cvs"
+readonly PLAYER="mplayer"
+readonly SETTINGS="./${APPLICATION}.cvs"
 declare -i -r CACHE_MIN=80
 declare -i -r CACHE_SIZE=16384
+# declare RECENTLY_PLAYED
 LOGGING=false
 MODULE_INFO=false
 USE_CACHE=true
-### Main
+### Error policy
 set -uo pipefail
+tryOn
+# trap catch ERR
 ensureBash
+### Main
 pushd "${PWD}" >/dev/null
 case "$#" in
-	0) start ;;
-	1) [ "${1}" == "--help" ] && usage || invalidArg "${1}" ;;
-	*) wrongArgCount "${@}" ;;
+	0)	start ;;
+	1)	case "${1}" in
+			--help) usage ;;
+			*) invalidArg "${1}" ;;
+		esac ;;
+	*)	wrongArgCount "${@}" ;;
 esac
