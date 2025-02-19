@@ -9,7 +9,7 @@
 
 about () {
 	resetScreen "About"
-	print "Terminal Audio Player (${PRODUCT_NAME})\n\n"
+	print "${BBG}Terminal Audio Player (${PRODUCT_NAME})\n\n"
 	print "The current version is ${VERSION}\n\n"
 	print "${COPYRIGHT}\n\n"
 	print "Your terminal type is '${TERM}',\n"
@@ -133,6 +133,7 @@ die () {
 	saveSettings
 	trap - ERR
 	echo "Until we hear again..."
+	exit 0
 }
 
 ensureBash () {
@@ -143,7 +144,7 @@ ensureBash () {
 
 ensureDependencies () {
 	local cmds
-	cmds=$(getMissingCommands "dialog" "${PLAYER}")
+	cmds=$(getMissingCommands "curl" "dialog" "${PLAYER}")
 	if [ -n "${cmds}" ]; then
 		echo "*** ${PRODUCT}"
 		echo -ne "\n${APPLICATION} requires the following commands to operate: ${RED}${cmds}${C0}\n"
@@ -181,7 +182,7 @@ ensureInternet () {
 }
 
 error () { # msg
-	echo -ne " ${YELLOW}Error: ${1}${FG0}" >&2
+	echo -ne " ${YELLOW}Error: ${1}${C0}" >&2
 }
 
 fail () { # reason
@@ -466,6 +467,7 @@ mainMenu () {
     	retCode=$?
 		tryOn
 		tput cnorm || terror
+		clearMsg
 		[ "${retCode}" -eq 0 ] || break
 		OPTIONS=()
 		case "${choice}" in
@@ -516,7 +518,7 @@ play () { # {playlist|name} url
 					Playing*) # new screen for each...
 						resetScreen "${PLAYER}"
 						($keys)
-          				echo -ne "\n${BAR} ${label} ${2} ${BG0}\n"
+          				echo -ne "\n${BAR} ${label} ${2} ${BG0}${BBG}\n"
 						;;
 					'') ;;
 					*"="*|*"audio codec"*|*AO:*|*AUDIO:*|*"ICY Info:"*|*libav*|*Video:*)
@@ -583,7 +585,8 @@ playStream () { # name url
 	local code hint
 	[ "$#" -eq 2 ] || wrongArgCount "$@"
 	clear
-	echo -ne "${HIGHLIGHT}Loading...${C0}"
+	#echo -ne "${HIGHLIGHT}Loading...${C0}"
+	echo "Loading..."
 	code=$(getHttpResponseStatus "${2}")
 	case "${code}" in
 		200|302|400|404|405) play "${1}" "${2}" ;;
@@ -847,6 +850,8 @@ case "$#" in
 	1)	case "${1}" in
 			--help) usage ;;
 			*) invalidArg "${1}" ;;
-		esac ;;
+		esac
+		;;
 	*)	wrongArgCount "${@}" ;;
 esac
+die
