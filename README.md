@@ -15,8 +15,8 @@ _tauplayer_ alias Terminal Audio Player
 ### Installing
 
 0) Check and download the latest version.
-1) Start tauplayer application by typing bash tauplayer.sh in terminal.
-2) When launched very first time tauplayer checks your configuration is complete.
+1) Start _tauplayer_ application by typing _bash tauplayer.sh_ in terminal.
+2) When launched very first time _tauplayer_ checks your configuration is complete.
 3) If tauplayer reported missing command dependencies in your system, please install them by running given command one liner as authorized user. E.g.
   ```
   sudo apt-get install curl dialog lsb-release mplayer
@@ -32,32 +32,32 @@ Please send bug reports to jarvenja@gmail.com.
 
 ## License
 
-This project is licensed under _GPL License v3_ - see the LICENSE.md file for details.
+This project is licensed under _GPL License v3_ - see the _LICENSE.md_ file for details.
 
 ## Usage
 
 _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Options_ menu, where you can select the action of your choice.
 
-Understanding these terms makes using easier:
-- **Cache** is a memory buffer, which Player reserves for audio playback.
+Understanding these terms makes using a bit easier:
+- **Cache** is a memory buffer, which player reserves for audio playback.
 - **Collection** is a group of named streams, which are stored in _.cvs_ file in its name and _/collections_ subdirectory under installation directory.
 - **Player** is audio player application, which tauplayer uses for playback.
-- **Playlist** is a formatted list of links to audio files. tauplayer supports currently playlists only in .m3u format.
-- **Playlist Directory** is a parent directory under which tauplayer scans available playlists.
-- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many Collection files.
-- **tauplayer** is abbreviation for words Terminal Audio Player. At its most concrete minimum it is one Bash shell script file (tauplayer.sh).
+- **Playlist** is a formatted list of links to audio files. _tauplayer_ supports currently playlists only in _.m3u_ format.
+- **Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists.
+- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _collection_ files.
+- **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
 - **(Text) terminal** is a text input and output environment, where you can start and run commands.
 
 The following are some of functions described step by step.
 
 ### Change Collection
 
-There is always one collection active and selected. At very first time, tauplayer creates a default collection named as _'favorites'_ for you.
+There is always one collection active or selected. At very first time, tauplayer creates a default collection named as _'favorites'_ for you.
 
-You can change collection this way:
-- Select _Change Collection_ from Options menu and press _Enter_ when _Select_ is highlighted.
-- You see the is changed and displayed on titlebar on the top right.
-- Now you can _Listen_, _Add_ and _Remove_ streams of active collection.
+You can change the active collection this way:
+- Select _Change Active Collection_ from _Options_ menu and press _Enter_ when _Select_ is highlighted.
+- You can see the collection name at the end of the titlebar line on the top.
+- Now you can _Listen_, _Add_ and _Remove_ streams of the active collection.
 
 ### Change Playlist Directory
 
