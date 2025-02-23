@@ -8,6 +8,9 @@ tauplayer alias Terminal Audio Player
 
 - Linux based operating system, where required commands (dependencies) are installed.
 - Must be run only in bash shell.
+  ```
+  bash tauplayer.sh
+  ```
 
 ### Installing
 
@@ -15,6 +18,9 @@ tauplayer alias Terminal Audio Player
 1) Start tauplayer application by typing bash tauplayer.sh in terminal.
 2) When launched very first time tauplayer checks your configuration is complete.
 3) If tauplayer reported missing command dependencies in your system, please install them by running given command one liner as authorized user.
+  ```
+  sudo apt-get install curl dialog lsb-release mplayer
+  ```
 
 ### Configutation
 
@@ -26,23 +32,23 @@ Please send bug reports to jarvenja@gmail.com.
 
 ## License
 
-This project is licensed under GPL License v3 - see the LICENSE.md file for details.
+This project is licensed under _GPL License v3_ - see the LICENSE.md file for details.
 
 ## Usage
 
 tauplayer is used via Text-based User Interface (TUI). When launched it opens the Options menu, where you can select the action of your choice.
 
-When using you should be somewhat familiar with these terms:
-- Cache is a memory buffer, which Player reserves for audio playback.
-- Collection is a group of named streams, which are stored in .cvs file in its name and /collections sub directory under installation directory.
-- Player is audio player application, which tauplayer uses for playback.
-- Playlist is a formatted list of links to audio files. tauplayer supports currently playlists only in .m3u format.
-- Playlist Directory is a parent directory under which tauplayer scans available playlists.
-- (Radio) Stream URL is a direct link to radio station's online stream. Same radio stream can be stored in many Collection files.
-- tauplayer is abbreviation for words Terminal Audio Player. At its most concrete minimum it is one Bash shell script file (tauplayer.sh).
-- (Text) terminal is a text input and output environment, where you can start and run commands.
+Understanding these terms makes using easier:
+- _Cache_ is a memory buffer, which Player reserves for audio playback.
+- _Collection_ is a group of named streams, which are stored in .cvs file in its name and /collections sub directory under installation directory.
+- _Player_ is audio player application, which tauplayer uses for playback.
+- _Playlist_ is a formatted list of links to audio files. tauplayer supports currently playlists only in .m3u format.
+- _Playlist Directory_ is a parent directory under which tauplayer scans available playlists.
+- _(Radio) Stream URL_ is a direct link to radio station's online stream. Same radio stream can be stored in many Collection files.
+- _tauplayer_ is abbreviation for words Terminal Audio Player. At its most concrete minimum it is one Bash shell script file (tauplayer.sh).
+- _(Text) terminal_ is a text input and output environment, where you can start and run commands.
 
-The following is some of main activities presented.
+The following are some of functions described step by step.
 
 ### Change Collection
 
@@ -79,7 +85,7 @@ You can change collection this way:
 - If reached, tauplayer starts a playback session where it tries to play the stream with audio player.
 - If the Stream is not reached for some reason tauplayer displays Stream Not Available screen with related information.
 
-### Playback via mplayer
+### Playback via audio player (mplayer)
 
 - During playback tauplayer displays the most relevant key set, which you can dynamically control the parameters of the Player.
 - Please note that all of the other keys are still enabled. Therefore, please avoid pressing any unlisted keys since they can confuse the Player in some situations.
