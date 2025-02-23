@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 #               Terminal Audio (tau) Player
-#         Copyright (c) 2025 <jarvenja@gmail.com>
+#                   Copyright (c) 2025
+#            J. Järvenpää <jarvenja@gmail.com>
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
 # About principles:
-# - bash scripting and bashism has somewhat different rules than true programming languages
+# - bash scripting has somewhat different rules (bashism) than true programming languages
 
 about () {
 	resetScreen "About"
-	print "${BBG}Terminal Audio Player (${PRODUCT_NAME})\n\n"
+	print "Terminal Audio Player (${PRODUCT_NAME})\n\n"
 	print "The current version is ${VERSION}\n\n"
 	print "${COPYRIGHT}\n\n"
 	print "Your terminal type is '${TERM}',\n"
@@ -44,12 +45,17 @@ archive () { # collection
 	fi
 }
 
+blink () {
+	BLINKI="${BLINK}"
+	BLINKO="${UNBLINK}"
+}
+
 catch () {
 	local code cmd lineno
 	code=$?
 	cmd="${BASH_COMMAND}"
 	lineno="${BASH_LINENO}"
-	printf "${YELLOW}The line %d: %s\nreturned %d\n${FG0}" "${lineno}" "${cmd}" "${code}"
+	printf "${WARN}The line %d: %s\nreturned %d\n${NORMAL}" "${lineno}" "${cmd}" "${code}"
 	# FixMe: Printing multiple lines...
 }
 
@@ -132,8 +138,8 @@ die () {
 	clear
 	saveSettings
 	trap - ERR
+	trap - EXIT
 	echo "Until we hear again..."
-	exit 0
 }
 
 ensureBash () {
@@ -142,12 +148,25 @@ ensureBash () {
 	[ "${t}" == "bash" ] || fatal "Must be run by bash instead of ${t}"
 }
 
-ensureDependencies () {
+ensureConfig () {
+	[ -f "${DIALOGRC}" ] || fatal ".dialogrc file not found in directory!"
+	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
+	if [ -f "${SETTINGS}" ]; then
+		loadSettings "${SETTINGS}"
+	else # ensure tauplayer.cvs and ./collections/favorites.cvs
+		touch $(getCollectionPath "${COLLECTION1}")
+		COLLECTION="${COLLECTION1}"
+		PLAYLIST_DIR="${HOME}"
+		saveSettings
+	fi
+}
+
+ensureDependencies () { # cmds...
 	local cmds
-	cmds=$(getMissingCommands "curl" "dialog" "${PLAYER}")
+	cmds=$(getMissingCommands "$@")
 	if [ -n "${cmds}" ]; then
 		echo "*** ${PRODUCT}"
-		echo -ne "\n${APPLICATION} requires the following commands to operate: ${RED}${cmds}${C0}\n"
+		echo -ne "\n${APPLICATION} requires the following commands to operate: ${BAD}${cmds}${NORMAL}\n"
 		echo "Please install missing dependencies and try again."
 		echo "=> sudo apt-get install ${cmds}"
 		fatal "Missing dependencies"
@@ -162,19 +181,6 @@ ensureFile () { # file
 	[ -f "${1}" ] || fatal "File ${1} not found!"
 }
 
-ensureFiles () {
-	[ -f "${DIALOGRC}" ] || fatal ".dialogrc file not found in directory!"
-	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
-	if [ -f "${SETTINGS}" ]; then
-		loadSettings "${SETTINGS}"
-	else # ensure tauplayer.cvs and ./collections/favorites.cvs
-		touch $(getCollectionPath "${COLLECTION1}")
-		COLLECTION="${COLLECTION1}"
-		PLAYLIST_DIR="${HOME}"
-		saveSettings
-	fi
-}
-
 ensureInternet () {
 	local code
 	code=$(getHttpResponseStatus "${GG}")
@@ -182,16 +188,16 @@ ensureInternet () {
 }
 
 error () { # msg
-	echo -ne " ${YELLOW}Error: ${1}${C0}" >&2
+	echo -ne " ${WARN}Error: ${1}${NORMAL}" >&2
 }
 
 fail () { # reason
-	echo -ne " ${YELLOW}[${1}]" # ${COFF}"
+	echo -ne " ${WARN}[${1}]${NORMAL}"
 	inputKey
 }
 
 fatal () { # msg
-	echo -e "${RED}Fatal Error: ${1}${FG0}" >&2
+	echo -e "${BAD}Fatal Error: ${1}${NORMAL}" >&2
 	exit 1
 }
 
@@ -207,6 +213,12 @@ getBackupPath () { # collectionName
 
 getCollectionPath () { # [collectionName]
 	echo "${COLLECTION_DIR}/${1:-${COLLECTION}}.cvs"
+}
+
+getDistributor () {
+	local did
+	did=$(lsb_release -i)
+	echo "${did:16}"
 }
 
 # Based on https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses
@@ -297,7 +309,7 @@ getMissingCommands () { # cmds...
 	missing=""
 	for cmd in "$@"; do
 		command -v "${cmd}" &>/dev/null
-		[ $? -eq 0 ] || missing+="${cmd} "
+		[ $? -eq 0 ] || missing+="${cmd//_/-} "
 	done
 	echo "${missing}"
 }
@@ -310,6 +322,18 @@ getShellType () {
 
 getTitle () {
 	echo -ne "${BGR} ${PRODUCT} -=- [${COLLECTION}]"
+}
+
+guessBestTheme () {
+	local x
+	x=$(getDistributor)
+	case "${x}" in
+		# TODO add more
+		Linuxmint) x=rich ;;
+		Ubuntu) x=true ;;
+		*) x=true ;;
+	esac
+	return "${x}"
 }
 
 haspace () { # str
@@ -417,17 +441,19 @@ invalidArg () { # arg
 
 loadSettings () { # settingsFile
 	local collection file pld
-	IFS=, read collection pld < "${1}"
+	IFS=, read THEME pld collection RECENT_NAME RECENT_URL< "${1}"
 	[ -d "${pld}" ] && PLAYLIST_DIR="${pld}" || PLAYLIST_DIR="${HOME}"
 	COLLECTION="${COLLECTION1}"
 	if [[ -n "${collection}" ]]; then
 		file=$(getCollectionPath "${collection}")
 		[ -f "${file}" ] && COLLECTION="${collection}"
 	fi
+	[ -z "${THEME}" ] && THEME=$(guessBestTheme)
+	resetOtherColors "${THEME}"
 }
 
 log () { # msg
-	[ "${LOGGING}" == true ] && echo "${1}" >> "${LOG}" || true
+	[ -n "${LOG}" ] && echo "${1}" >> "${LOG}" || true
 }
 
 mainMenu () {
@@ -437,14 +463,14 @@ mainMenu () {
 	while :; do
 		menu=( \
 			"v" "Audio Settings..." \
-			"k" "View Music Player Controls..." \
+			"k" "View Player Controls..." \
 			"p" "Change Playlist directory..." \
-			"c" "Change Collection..." \
+			"c" "Change Active Collection..." \
 			"n" "Create New Collection..." \
 			"r" "Remove Collection from list..." \
 			"o" "Play list in order..." \
 			"s" "Play shuffled list..." \
-			"t"	"Play Stream..."
+			"t"	"Play Radio Stream..."
 			"m" "Module information is $(printBool ${MODULE_INFO})" \
 			"h" "Player cache is $(printBool ${USE_CACHE})" \
 			"a" "Add New Stream..." \
@@ -486,23 +512,28 @@ mainMenu () {
 			m) toggleModuleInfo ;;
 			h) toggleCache ;;
 			s) OPTIONS+=("-shuffle") ;&
-			o|s) playList ;;
+			o|s) playList $(playlistMenu) ;;
 			*) invalidArg "${choice}" ;;
 		esac
 	done
 }
 
-play () { # {playlist|name} url
-	local keys label line mp3floats prev
-	echo "play ${1} ${2}"
-	if [ "${1}" = "${PLAYLIST}" ]; then
+play () { # [streamName] url
+	local keys label line mp3floats prev sign
+	log "play > ${1} ${2}"
+	if [ -z "${1}" ]; then # playlist
 		keys="printLocalKeys"
-		label="[>]"
+		label=""
+		sign="${BLINKI}[>]${BLINKO}"
+		RECENT_NAME="${PLAYLIST}"
 	else
 		keys="printStreamKeys"
-		label="(( A ))  ${1} @" # broadcast
+		label="${1}\n         "
+		sign="${BLINKI}((${BLINKO} A ${BLINKI}))${BLINKO}"
+		RECENT_NAME="${1}"
 	fi
-	tryOff # since interaction with 3rd party modules
+	RECENT_URL="${2}"
+	# tryOff # since interaction with 3rd party modules
 	$(echo -ne mplayer -msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg "${OPTIONS[@]}" "${2}") |
 	{	echo
 		mp3floats=false
@@ -518,14 +549,14 @@ play () { # {playlist|name} url
 					Playing*) # new screen for each...
 						resetScreen "${PLAYER}"
 						($keys)
-          				echo -ne "\n${BAR} ${label} ${2} ${BG0}${BBG}\n"
+						echo ; echo -e " ${PLAYING1}${sign}  ${label} \e[0m${PLAYING2}${2} "
 						;;
 					'') ;;
 					*"="*|*"audio codec"*|*AO:*|*AUDIO:*|*"ICY Info:"*|*libav*|*Video:*)
 						[ "${MODULE_INFO}" == true ] && print "${line}"
 						;;
 					*)	if [ "${line}" == "${prev}" ]; then
-							echo -ne "${YELLOW}|"
+							echo -ne "${WARN}|${NORMAL}"
 						else
 							echo -ne "\n ${line} "
 							prev="${line}"
@@ -535,19 +566,15 @@ play () { # {playlist|name} url
 			fi
   		done
 	}
-	tryOn # back to default
+	# tryOn # back to default
+	inputKey
 }
 
-# FixMe!
-playList () {
-	local url
-	url=$(playlistMenu)
-	if [ -n "${url}" ]; then
+playList () { # [url]
+	if [ $# -eq 1 ]; then
 		[ "${USE_CACHE}" == true ] && OPTIONS+=(-cache "${CACHE_SIZE}" -cache-min "${CACHE_MIN}")
 		OPTIONS+=(-playlist)
-		# printf '%s\n' "${OPTIONS[@]}"
-		# log "playList <1> ${url}"
-		play "${PLAYLIST}" "${url}"
+		play "${PLAYLIST}" "${1}"
 	fi
 }
 
@@ -576,7 +603,7 @@ playlistMenu () {
 		)
 		retCode=$?
 		tryOn
-		tput cnorm # unhide cursor
+		tput cnorm || terror
 	    [ $? -eq 0 ] && echo "${f}"
 	fi
 }
@@ -584,9 +611,8 @@ playlistMenu () {
 playStream () { # name url
 	local code hint
 	[ "$#" -eq 2 ] || wrongArgCount "$@"
-	clear
-	#echo -ne "${HIGHLIGHT}Loading...${C0}"
-	echo "Loading..."
+	resetScreen "Pre-check"
+	echo -ne "Loading..."
 	code=$(getHttpResponseStatus "${2}")
 	case "${code}" in
 		200|302|400|404|405) play "${1}" "${2}" ;;
@@ -604,48 +630,47 @@ printBool () { # boolStr
 
 printFullKeys () {
 	resetScreen "${PLAYER} Controls"
-	echo -e "${BBG} ${GREEN}$(horizon 6) Track $(horizon 15)"
+	echo -e "$(horizon 6) Track $(horizon 15)"
     printKey "        Stop" "[Esc]"
 	printKey "       Pause" "P [Space]"
 	printKey "   Prev/Next" "< >"
 	printKey "      -/+10s" "<- ->"
 	printKey "     -/+1min" "[Up] [Down]"
 	printKey "    -/+10min" "[Pg] [PgUp]"
-	echo -e "${BBG} ${GREEN}$(horizon 3) Playback Speed $(horizon 9)"
+	echo -e "$(horizon 3) Playback Speed $(horizon 9)"
 	printKey "        100%" "[BkSp]"
 	printKey "         50%" "{"
 	printKey "      -/+10%" "[ ]"
 	printKey "          x2" "  }"
-	echo -e "${BBG} ${GREEN}$(horizon 5) Volume $(horizon 15)"
+	echo -e "$(horizon 5) Volume $(horizon 15)"
 	printKey "        Vol-" "9 /"
 	printKey "        Vol+" "0 *"
 	printKey "        Mute" "M"
 	printKey "     Balance" "( )"
-	echo -e "${BBG} ${GREEN}$(horizon 28)"
+	echo -e "$(horizon 28)"
 	inputKey
 }
 
 printKey () { # function key
-    echo -ne "${BBG}"
-	echo -e " ${GREEN}${1}  ${HIGHLIGHT}${2}${C0}"
+	echo -e " ${1}  ${BOLD}${2}${NORMAL}"
 }
 
 # FixMe
 printLocalKeys () {
-	echo -e "${BAR}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min         ${BBG}"
-	echo -e "${HIGHLIGHT} [Esc]  [Spc]   [<]  [>]  [<-]  [->]  [Up]  [Down]        ${BBG}"
+	echo -e "${BAR1}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min         \e[0m"
+	echo -e "${BAR2} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]        \e[0m"
 	echo
-	echo -e "${BAR}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance ${BBG}"
-	echo -e "${HIGHLIGHT} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )  ${BBG}"
+	echo -e "${BAR1}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance \e[0m"
+	echo -e "${BAR2} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )  \e[0m"
 }
 
 # FixMe
 printStreamKeys () {
-	echo -e "${BAR}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          ${BBG}"
-	echo -e "${HIGHLIGHT} [Esc]  [Spc]   [<]  [>]  [<-]  [->]  [Up]  [Down]         ${BBG}"
+	echo -e "${BAR1}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          \e[0m"
+	echo -e "${BAR2} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]         \e[0m"
 	echo
-	echo -e "${BAR}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  ${BBG}"
-	echo -e "${HIGHLIGHT} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )   ${BBG}"
+	echo -e "${BAR1}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
+	echo -e "${BAR2} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )   \e[0m"
 }
 
 removeCollection () {
@@ -674,27 +699,59 @@ replaceKeyValue () { # key value filepath
 	[ $? -eq 0 ] || error "Unable to update key '${1}'!"
 }
 
+resetOtherColors () { # theme
+	if [ "${1}" == true ]; then	# black bg ->
+		BAR1="${WHITE}\e[42m" # labels
+		BAR2="\e[38;5;235m\e[48;5;65m" # keys
+	else # rich bg ->
+		[ "${1}" != rich ] && warning "Tried to set unknown theme '${1}'"
+		BAR1="${WHITE}\e[42m" # labels
+		BAR2="\e[38;5;235m\e[48;5;65m" # keys
+	fi
+}
+
 resetScreen () { # header
 	clear
-	echo -ne "${BBG} ${GREEN}> ${PRODUCT} -=- ${1}\n"
+	echo -ne "${NORMAL}> ${PRODUCT} -=- ${1}\n"
 	horizon
 	echo; echo
 }
 
+resume () {
+	[ "${RECENT_NAME}" == "${PLAYLIST}" ] && playList "${RECENT_URL}" || playStream "${RECENT_NAME}" "${RECENT_URL}"
+}
+
 saveSettings () {
-	$(echo "${COLLECTION},${PLAYLIST_DIR}" > "${SETTINGS}")
+	$(echo "${THEME},${PLAYLIST_DIR},${COLLECTION},${RECENT_NAME},${RECENT_URL}" > "${SETTINGS}")
 	[ $? -eq 0 ] && echo -ne "Settings saved. "
 }
 
-start () {
-	# execute in appropriate order...
-	ensureFiles
-	ensureDependencies
-	# log ">>> ${USER} started on $(date '+%a %d-%m-%Y %T')"
-	ensureInternet
-	clearMsg
-	echo -e "${BBG}"
-	mainMenu
+start () { # args...
+	local help recent
+	help=false
+	recent=false
+	for arg in "$@"; do
+		case "${arg}" in
+			--help) help=true ;;
+			--log) LOG="./${APPLICATION}.log" ;;
+			--recent) recent=true ;;
+			*) invalidArg "${arg}" ;;
+		esac
+	done
+	if [[ "${help}" == true ]]; then
+		usage
+		popd > /dev/null
+	else # TUI session
+		log "*** ${USER} started TUI on $(date '+%a %d-%m-%Y %T')"
+		ensureConfig
+		ensureDependencies "curl" "dialog" "lsb_release" "${PLAYER}"
+		ensureInternet
+		trap die EXIT
+		clearMsg
+		blink
+		[ "${recent}" == true ] && resume
+		mainMenu
+	fi
 }
 
 streamMenu () { # action
@@ -786,9 +843,15 @@ updateStream () { # [name url]
 usage () {
 	echo "*** ${PRODUCT} - ${COPYRIGHT}"
 	echo
-	echo "Usage: bash ${0} [--help]"
+	echo "Usage: bash ${0} [options]"
 	echo "        (no args)    starts the application"
 	echo "        --help       show this information"
+	echo "        --log        log some operative information"
+	echo "        --recent     continue recently played list or stream"
+}
+
+warning () { # msg
+	log "Warning: ${1}"
 }
 
 wrongArgCount () { # args...
@@ -797,27 +860,31 @@ wrongArgCount () { # args...
 
 ### App info
 readonly APPLICATION="${0::-3}"
-readonly VERSION="v0.2 (beta)"
+readonly VERSION="v0.3 (beta)"
 readonly COPYRIGHT="Copyright 2025 J. Järvenpää <jarvenja@gmail.com>"
 readonly PRODUCT_NAME="tau Player"
 readonly PRODUCT="${PRODUCT_NAME} ${VERSION}"
-### Colors
+### Basic effects
+readonly BLACK="\e[30m"
+readonly BLINK="\e[5m"
+readonly BLUE="\e[34m"
+readonly BLUEBG="\e[42m"
+readonly GREEN1="\e[38;5;2m"
+readonly GREEN2="\e[92m"
+readonly RED="\e[1;91m"
+readonly UNBLINK="\e[25m"
+readonly YELLOW="\e[0;93m"
+readonly WHITE="\e[97m"
+### Symbolic TUI Colors
 DIALOGRC=".dialogrc"
 export DIALOGRC
-readonly BAR="\e[0;42m"		# key labels when playing
-readonly BBG="\e[48;5;0m"	# black bg
-readonly BG0="\e[49m"
-#readonly C0="\e[42m"
-readonly C0="\e[0m"
-readonly FG="\e[38;5;"
-readonly FG0="\e[39m"
-readonly FGC="\e[0;92m"		# default
-readonly GREEN="\e[38;5;2m" # default text color
-readonly RED="\e[1;91m"		# error color
-readonly HIGHLIGHT="\e[37m"	#38;5;248m"
-readonly PURPLE="\e[95m"	# syntax error
-readonly YELLOW="\e[0;93m"	# failures, warnings
-readonly WHITE="\e[1;97m"
+declare BAR1= BAR2= BLINKI= BLINKO= BOLD= NORMAL=
+readonly BAD="${RED}" # errors, missing
+readonly BOLD="${GREEN1}"
+readonly NORMAL="${GREEN1}"
+readonly PLAYING1="${WHITE}"
+readonly PLAYING2="${GREEN2}"
+readonly WARN="${YELLOW}" # failures, warnings
 ### Special chars
 readonly BGR="\u2261"
 readonly DASH="\u2500"
@@ -827,15 +894,13 @@ readonly COLLECTION_DIR="./collections"
 readonly COLLECTION1="favorites"
 readonly FILENAME_CHAR="[a-zA-Z0-9\-]"
 readonly GG="https://www.google.com"
-readonly LOG="./${APPLICATION}.log"
-readonly PLAYLIST="PLAYLIST;" # placeholder key
+readonly PLAYLIST="Playlist"
 ### Settings
 readonly PLAYER="mplayer"
 readonly SETTINGS="./${APPLICATION}.cvs"
 declare -i -r CACHE_MIN=80
 declare -i -r CACHE_SIZE=16384
-# declare RECENTLY_PLAYED
-LOGGING=false
+declare COLLECTION= LOG= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= THEME=
 MODULE_INFO=false
 USE_CACHE=true
 ### Error policy
@@ -845,13 +910,4 @@ tryOn
 ensureBash
 ### Main
 pushd "${PWD}" >/dev/null
-case "$#" in
-	0)	start ;;
-	1)	case "${1}" in
-			--help) usage ;;
-			*) invalidArg "${1}" ;;
-		esac
-		;;
-	*)	wrongArgCount "${@}" ;;
-esac
-die
+start "$@"
