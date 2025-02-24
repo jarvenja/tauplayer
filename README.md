@@ -6,25 +6,26 @@ _tauplayer_ alias Terminal Audio Player
 
 ### Dependencies
 
-- Linux based operating system, where required commands _(dependencies)_ are installed.
+- Linux based operating system.
 - Must be run only in _bash shell_.
-  ```
-  bash tauplayer.sh
-  ```
-
-### Installing
-
-0) Check and download the latest available version from https://github.com/jarvenja/tauplayer/tags.
-1) Start _tauplayer_ application by typing _bash tauplayer.sh_ in terminal.
-2) When launched very first time _tauplayer_ checks your configuration is complete.
-3) If tauplayer reported missing command dependencies in your system, please install them by running given command one liner as authorized user. E.g.
+- You can install the missing command dependencies into your system before or later guided by _tauplayer_ as authorized user.
   ```
   sudo apt-get install curl dialog lsb-release mplayer
   ```
+  
+### Installing
 
-### Configutation
+1) Download the latest available version from https://github.com/jarvenja/tauplayer/tags.
+2) Extract package into e.g. /HOME/user/tauplayer
+3) Currently, there is no installer. You can jump directly into **Executing the program**.
+  
+### Executing the program
 
-This section will be updated later.
+You can just start using _tauplayer_ application by typing __bash tauplayer.sh__ in terminal.
+```
+bash tauplayer.sh
+```
+tauplayer will create one or two data files in its parent directory.
 
 ## Authors
 
@@ -86,3 +87,6 @@ You can change the active collection this way:
 - During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 - Please note that all of the other keys are still enabled. Therefore, please avoid pressing any unlisted keys since they can confuse the player in some situations.
 
+## Improving playback quality
+
+This section will be updated later.
