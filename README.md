@@ -14,7 +14,7 @@ _tauplayer_ alias Terminal Audio Player
 
 ### Installing
 
-0) Check and download the latest version.
+0) Check and download the latest available version from https://github.com/jarvenja/tauplayer/tags.
 1) Start _tauplayer_ application by typing _bash tauplayer.sh_ in terminal.
 2) When launched very first time _tauplayer_ checks your configuration is complete.
 3) If tauplayer reported missing command dependencies in your system, please install them by running given command one liner as authorized user. E.g.
@@ -66,13 +66,13 @@ You can change the active collection this way:
 - _tauplayer_ keeps asking it until you type a valid name for existing new or current one.
 - You can still cancel the action. Just leave the old directory as it is and press _Enter_.
 
-### Play local audio files via playlist
+### Play local audio files from playlist
 
 - Select _Play List_ from _Options_ menu.
 - After a moment, _tauplayer_ shows playlist files founded in _Playlist Directory_.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
-- If Shuffle is OFF the list of songs are played in order they appear in current playlist.
-- If Shuffle is ON the list of songs are played in random order.
+  - If Shuffle is set OFF the list of songs are played in order they **appear** in current playlist.
+  - If Shuffle is set ON the list of songs are played in **random** order.
 
 ### Play a radio stream from active collection
 
