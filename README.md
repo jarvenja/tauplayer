@@ -8,7 +8,7 @@ _tauplayer_ alias Terminal Audio Player
 
 1) Linux based operating system.
 2) Must be run only in _bash shell_.
-3) You can install the missing command dependencies into your system now or later guided by _tauplayer_ as authorized user.
+3) You can install additional possibly missing commands (dependencies) into your system now or later guided by _tauplayer_ as authorized user.
 
   ```
   sudo apt-get install curl dialog lsb-release mplayer
@@ -17,7 +17,7 @@ _tauplayer_ alias Terminal Audio Player
 ### Installing
 
 1) Download the latest available version from https://github.com/jarvenja/tauplayer/tags.
-2) Extract package into e.g. /HOME/user/tauplayer
+2) Extract package into e.g. /$HOME/user/tauplayer
 
 There is no installer. You can now execute the program.
   
