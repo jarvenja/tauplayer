@@ -27,13 +27,12 @@ You can just start using _tauplayer_ application by typing __bash tauplayer.sh__
 ```
 bash tauplayer.sh
 ```
-_tauplayer_ creates one or two data files in its installation directory during use.
-
 More information about advanced options can be obtained by entering: 
 
 ```
 bash tauplayer.sh --help
 ```
+_tauplayer_ creates one or two data files in its installation directory during use.
 
 ## Authors
 
