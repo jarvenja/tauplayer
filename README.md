@@ -27,7 +27,13 @@ You can just start using _tauplayer_ application by typing __bash tauplayer.sh__
 ```
 bash tauplayer.sh
 ```
-_tauplayer_ will create one or two data files in its parent directory.
+_tauplayer_ creates one or two data files in its installation directory during use.
+
+More information about advanced options can be obtained by entering: 
+
+```
+bash tauplayer.sh --help
+```
 
 ## Authors
 
@@ -39,7 +45,7 @@ This project is licensed under _GPL License v3_ - see the _LICENSE.md_ file for 
 
 ## Usage
 
-_tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Options_ menu, where you can select the action of your choice.
+_tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main_ menu, where you can select the action of your choice.
 
 Understanding these terms makes using a bit easier:
 - **Cache** is a memory buffer, which player reserves for audio playback.
@@ -58,28 +64,28 @@ The following are some of functions described step by step.
 There is always one collection active or selected. At very first time, tauplayer creates a default collection named as _'favorites'_ for you.
 
 You can change the active collection this way:
-- Select _Change Active Collection_ from _Options_ menu and press _Enter_ when _Select_ is highlighted.
+- Select _Change Active Collection_ from _Main_ menu and press _Enter_ when _Select_ is highlighted.
 - You can see the collection name at the end of the titlebar line on the top.
 - Now you can _Listen_, _Add_ and _Remove_ streams of the active collection.
 
 ### Change Playlist Directory
 
-- Select _Change Playlist Directory_ from _Options_ menu.
+- Select _Change Playlist Directory_ from _Main_ menu.
 - When typing new _Playlist Directory_ you need to remember it correctly. 
 - _tauplayer_ keeps asking it until you type a valid name for existing new or current one.
 - You can still cancel the action. Just leave the old directory as it is and press _Enter_.
 
 ### Play local audio files from playlist
 
-- Select _Play List_ from _Options_ menu.
+- Select _Play List_ from _Main_ menu.
 - After a moment, _tauplayer_ shows playlist files founded in _Playlist Directory_.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
-  - If Shuffle is set OFF the list of songs are played in order they **appear** in current playlist.
-  - If Shuffle is set ON the list of songs are played in **random** order.
+  - If Shuffle is **checked** the list of songs are played in **random** order.
+  - If Shuffle is **not **checked the list of songs are played in order they **appear** in current playlist.
 
 ### Play a radio stream from active collection
 
-- Select _Play Radio Stream_ from _Options_ menu.
+- Select _Play Radio Stream_ from _Main_ menu.
 - Select stream to _Listen_ from opening _Stream_ menu.
 - If reached, _tauplayer_ starts a playback session where it tries to play the stream with audio player.
 - If the Stream is not reached for some reason _tauplayer_ displays _Stream Not Available_ screen with related information.
