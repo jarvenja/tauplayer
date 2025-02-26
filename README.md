@@ -23,7 +23,7 @@ There is no installer. You can now execute the program.
   
 ### Executing the program
 
-You can just start using _tauplayer_ application by typing __bash tauplayer.sh__ in terminal.
+You can start using _tauplayer_ application by typing the following in terminal:
 ```
 bash tauplayer.sh
 ```
@@ -80,7 +80,7 @@ You can change the active collection this way:
 - After a moment, _tauplayer_ shows playlist files founded in _Playlist Directory_.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
   - If Shuffle is **checked** the list of songs are played in **random** order.
-  - If Shuffle is **not **checked the list of songs are played in order they **appear** in current playlist.
+  - If Shuffle is **not** checked the list of songs are played in order they **appear** in current playlist.
 
 ### Play a radio stream from active collection
 
