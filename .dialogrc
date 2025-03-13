@@ -49,8 +49,8 @@ tag_selected_color = (YELLOW,GREEN,ON)
 tag_key_color = (YELLOW,BLACK,OFF)
 # tag_key_selected_color = (RED,BLUE,ON)
 ### Check box
-# check_color = (BLACK,WHITE,OFF)
-# check_selected_color = (WHITE,BLUE,ON)
+check_color = (YELLOW,BLACK,OFF)
+check_selected_color = (YELLOW, BLUE,ON)
 ### Arrows
 # uarrow_color = (GREEN,BLACK,ON)
 # darrow_color = (GREEN,BLACK,ON)
