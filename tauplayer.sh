@@ -6,7 +6,7 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
 # About principles:
-# - bash scripting has somewhat different rules (bashism) than true programming languages
+# 1. bash scripting has somewhat different rules (bashism) than true programming languages
 
 about () {
 	resetScreen "About"
@@ -27,7 +27,7 @@ about () {
 
 addValidStream () { # validName validUrl
 	local err file
-	[ $# -ne 2 ] && invalidAgsfatal "${1} MUST be run alone!"
+	[ $# -ne 2 ] && invalidArg "${1} MUST be run alone!"
 	file=$(getCollectionPath)
 	$(echo "${1},${2}" >> "${file}") && sort -o "${file}"{,}
 }
@@ -54,9 +54,9 @@ batch () { # arg argc
 	exit 0
 }
 
-blink () {
-	BLINKI="${BLINK}"
-	BLINKO="${UNBLINK}"
+blink () { # text
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	[ "${BLINK}" == on ] && echo "${BLINKI}${1}${BLINKO}" || echo "${1}"
 }
 
 catch () {
@@ -66,28 +66,6 @@ catch () {
 	lineno="${BASH_LINENO}"
 	printf "${WARN}The line %d: %s\nreturned %d\n${NORMAL}" "${lineno}" "${cmd}" "${code}"
 	# FixMe: Printing multiple lines...
-}
-
-changePlaylistDir () {
-	resetScreen "Change Playlist Directory"
-	print "Type full path to existing directory\n\n"
-	while :; do
-		read -r -p "> Playlist directory: " -i "${PLAYLIST_DIR}" -e dir
-		if [ $? -ne 0 ]; then
-			log "Reading new directory name (${dir}) returned $?"
-			MSG="Read Error."
-			return
-		fi
-		if [ -z "${dir}" ] || [ "${dir}" == "${PLAYLIST_DIR}" ]; then
-			clearMsg
-			return
-		fi
-		if [ -d "${dir}" ]; then
-			PLAYLIST_DIR="${dir}"
-			inform "Playlist directory changed."
-			return
-		fi
-	done
 }
 
 check () { # checkvalue
@@ -100,8 +78,8 @@ clearMsg () {
 
 collectionMenu () { # action
 	local c line
+	local -i dlg
 	local -a entries
-	local -i retCode
 	while read -r line; do
 		c="${line##*/}"
 		c="${c%.cvs}"
@@ -121,10 +99,10 @@ collectionMenu () { # action
 		--menu "\n${MSG}" 0 0 16 \
 		"${entries[@]}"
 	)
-	retCode=$?
+	dlg=$?
 	tryOn
 	tput cnorm || terror
-	if [ "${retCode}" -eq "${DLG_OK}" ]; then
+	if [ "${dlg}" -eq "${DLG_OK}" ]; then
 		case "${1}" in
 			Change) COLLECTION="${c}" ;;
 			Remove) archive "${c}" ;;
@@ -156,6 +134,11 @@ die () {
 	echo "Until we hear again..."
 }
 
+displayTxt () { # txtFile
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	$(cat "${1}")
+}
+
 ensureBash () {
 	local t
 	t=$(getShellType)
@@ -179,7 +162,7 @@ ensureConfig () {
 	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
 	if [ -f "${SETTINGS}" ]; then
 		loadSettings "${SETTINGS}"
-	else # ensure tauplayer.cvs and ./collections/favorites.cvs
+	else #=> ensure tauplayer.cvs and ./collections/favorites.cvs
 		touch $(getCollectionPath "${COLLECTION1}")
 		COLLECTION="${COLLECTION1}"
 		PLAYLIST_DIR="${HOME}"
@@ -311,6 +294,7 @@ getHttpResponseName () { # code
 	esac
 }
 
+# FixMe! --head !!
 getHttpResponseStatus () { # url
 	local code
 	code=$(curl -o /dev/null --silent --head --write-out "%{http_code}\n" "${1}")
@@ -345,18 +329,6 @@ getTitle () {
 	echo -ne "${PRODUCT} -=- [${COLLECTION}]"
 }
 
-guessBestTheme () {
-	local x
-	x=$(getDistributor)
-	case "${x}" in
-		# TODO add more
-		Linuxmint) x=rich ;;
-		Rasbian|Ubuntu) x=true ;;
-		*) warn "Theme not checked by human for ${w}" ; x=true ;;
-	esac
-	echo "${x}"
-}
-
 hasKey () { # key
 	local f match
 	f=$(getCollectionPath "${COLLECTION}")
@@ -369,12 +341,52 @@ haspace () { # str
 	[[ ${1} =~ [[:space:]]+ ]]
 }
 
+hasText () { # str
+	[[ ${1} =~ [[:alnum:]]+ ]]
+}
+
 horizon () { # [width]
 	local -i n
 	n="${1:-$(tput cols)}"
 	while ((n-- > 0)); do
 		printf "${DASH}"
 	done
+}
+
+infoMenu () {
+	local -i dlg
+	local -a menu
+ 		menu=( \
+			"l" "License..." \
+ 			"v" "Read me..." \
+ 			"t" "tauplayer..." \
+        )
+       	tput civis || terror
+	clearMsg
+	tput civis || terror
+	tryOff
+	choice=$(dialog \
+		--stdout \
+        --backtitle "$(getTitle)" \
+        --title " ${1} Stream " \
+        --clear \
+        --ok-label "${1}" \
+        --menu "\n${MSG}" 0 0 16 \
+         "${streams[@]}"
+	)
+	dlg=$?
+	tryOn
+	tput cnorm || terror
+	if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
+		case "${choice}" in
+			l) cat "./LICENSE" ;;
+			r) cat "./README.md" ;;
+			t) about ;;
+			*) invalidArg "${choice}" ;;
+		esac
+	else
+		handleDlgReturn "${dlg}"
+	fi
 }
 
 informWaiting () { # slowOperation
@@ -417,6 +429,7 @@ inputNewCollection () {
 	file=$(getCollectionPath "${name}")
 	if [ -f "${file}" ]; then
 		fail "Already exists"
+		inputKey
 	else
 		createCollection "${name}"
 		COLLECTION="${name}"
@@ -455,7 +468,7 @@ inputValidStreamName () { # [old]
 			fi
 		fi
 	done
- }
+}
 
 inputValidStreamUrl () { # [old]
 	read -r -p "  > URL: " -i "${1:-}" -e url
@@ -474,22 +487,22 @@ invalidArg () { # arg
 loadSettings () { # settingsFile
 	local collection file pld
 	[ $# -eq 1 ] || wrongArgCount "$@"
-	IFS=, read theme pld collection RECENT_NAME RECENT_URL CACHE MODULE_INFO SHUFFLE < "${1}"
+	IFS=, read COLORING pld collection RECENT_NAME RECENT_URL BLINK MODULE_INFO SHUFFLE < "${1}"
 	unset IFS
 	[ -d "${pld}" ] && PLAYLIST_DIR="${pld}" || PLAYLIST_DIR="${HOME}"
-	# ensure COLLECTION
+	# ensure COLLECTION..
 	COLLECTION="${COLLECTION1}"
 	if [[ -n "${collection}" ]]; then
 		file=$(getCollectionPath "${collection}")
 		[ -f "${file}" ] && COLLECTION="${collection}"
 	fi
-	# set theme dependent values
-	[ -z "${THEME}" ] || [ "${#THEME}" -gt "${THEME_MAX_LENGHT}" ] && THEME=$(guessBestTheme)
-	resetOtherColors "${THEME}" || true
+	# set theme dependent values..
+	[ -z "${COLORING}" ] || [ "${#COLORING}" -gt "${COLORING_MAX}" ] && resetColoring
+	setBars "${COLORING}" || true
 	# ensure playback preferences..
+	check "${BLINK}" || BLINK=off
 	check "${MOD_INFO}" || MOD_INFO=off
 	check "${SHUFFLE}" || SHUFFLE=off
-	check "${CACHE}" || CACHE=on
 }
 
 log () { # msg
@@ -504,7 +517,6 @@ mainMenu () {
 		menu=( \
 			"v" "Audio Settings..." \
 			"k" "View Player Controls..." \
-			"d" "Change Playlist directory..." \
 			"c" "Change Active Collection..." \
 			"n" "Create New Collection..." \
 			"r" "Remove Collection from list..." \
@@ -514,7 +526,7 @@ mainMenu () {
 			"a" "Add New Stream..." \
 			"u" "Update Stream..." \
 			"e" "Remove Stream..." \
-			"i" "About..."
+			"i" "Info..."
 		)
 		tput civis || terror
 		tryOff
@@ -536,7 +548,6 @@ mainMenu () {
 			case "${choice}" in
 		    	v) alsamixer ;;
 				k) printFullKeys ;;
-				d) changePlaylistDir || true ;;
 				c) collectionMenu "Change" ;;
 				n) inputNewCollection || true ;;
 				r) collectionMenu "Remove" ;;
@@ -546,7 +557,7 @@ mainMenu () {
 				a) inputNewStream || true ;;
 				u) streamMenu "Update" || true ;;
 				e) streamMenu "Remove" || true ;;
-				i) about ;;
+				i) infoMenu || true ;;
 				*) invalidArg "${choice}" ;;
 			esac
 		else
@@ -565,18 +576,20 @@ play () { # [streamName] url
 	local -a playback
 	playback=()
 	if [ -z "${1}" ]; then # play list
-		[ "${CACHE}" == on ] && playback+=(-cache "${CACHE_SIZE}" -cache-min "${CACHE_MIN}")
+		[ "${PLAYLIST_CACHE}" == true ] && playback+=(-cache "${CACHE_SIZE}" -cache-min "${CACHE_MIN}")
 		[ "${SHUFFLE}" == on ] && playback+=(-shuffle)
 		keys="printLocalKeys"
 		label=""
-		sign="${BLINKI}${PLAYING2}[>]${BLINKO}"
+		sign=$(blink "${PLAYING2}[>]")
 		title="${PLAYLIST}"
 		RECENT_NAME="${PLAYLIST}"
 		playback+=(-playlist)
 	else
 		keys="printStreamKeys"
 		label="${1}\n         "
-		sign="${BLINKI}((${BLINKO} A ${BLINKI}))${BLINKO}"
+		sign=$(blink "((")
+		sign+=" A "
+		sign+=$(blink "))")
 		title="[${COLLECTION}]"
 		RECENT_NAME="${1}"
 	fi
@@ -630,7 +643,7 @@ playbackMenu () {
 		--clear \
 		--ok-label "Update" \
 		--checklist "\nUse arrow keys and space bar" 0 34 6 \
-		"${CACHE_ID}" "Playlist Cache" "${CACHE}" \
+		"${BLINK_ID}" "Blink playing icon" "${BLINK}" \
 		"${SHUFFLE_ID}" "Shuffle playlist" "${SHUFFLE}" \
 		"${MOD_INFO_ID}" "Module Info" "${MOD_INFO}" \
 		--output-fd 1
@@ -642,6 +655,26 @@ playbackMenu () {
 
 playList () {
 	local pl
+	resetScreen "Play list"
+	print "Scanning of playlists\n"
+	print "- type full path to existing directory\n"
+	print "- or leave it empty to cancel\n\n"
+	while :; do
+		read -r -p "> Directory: " -i "${PLAYLIST_DIR}" -e dir
+		if [ $? -ne 0 ]; then
+			log "Reading new directory name (${dir}) returned $?"
+			report "Read Error"
+			return
+		fi
+		if [ -z "${dir}" ]; then
+			clearMsg
+			return
+		fi
+		if [ -d "${dir}" ]; then
+			PLAYLIST_DIR="${dir}"
+			break
+		fi
+	done
 	pl=$(playlistMenu)
 	[ -n "${pl}" ] && play "" "${pl}"
 }
@@ -655,7 +688,7 @@ playlistMenu () {
 		haspace "${pl}" || entries+=("${pl}" "")
 	done < <(find "${PLAYLIST_DIR}" -name "*.m3u" -type f)
 	if [[ "${#entries[@]}" -eq 0 ]]; then
-		MSG="No playlists found."
+		report "No playlists found"
 	else # one or more playlists
 		clearMsg
 		# FixMe! tput civis
@@ -664,8 +697,8 @@ playlistMenu () {
 			--stdout \
 			--clear \
 			--backtitle "$(getTitle)" \
-			--title " Listen Playlist " \
-			--cancel-label "Back" \
+			--title " Playlists found " \
+			--cancel-label "Cancel" \
 			--ok-label "Play" \
 			--menu "\n${MSG}" 0 0 16 \
  			"${entries[@]}"
@@ -678,7 +711,7 @@ playlistMenu () {
 }
 
 playStream () { # name url
-	local code hint
+	local code
 	[ "$#" -eq 2 ] || wrongArgCount "$@"
 	resetScreen "Pre-check"
 	informWaiting "Loading"
@@ -704,7 +737,7 @@ printFullKeys () {
 	printKey "   Prev/Next" "< >"
 	printKey "      -/+10s" "<- ->"
 	printKey "     -/+1min" "[Up] [Down]"
-	printKey "    -/+10min" "[Pg] [PgUp]"
+ 	printKey "    -/+10min" "[Pg] [PgUp]"
 	echo -e "$(horizon 3) Playback Speed $(horizon 9)"
 	printKey "        100%" "[BkSp]"
 	printKey "         50%" "{"
@@ -725,28 +758,24 @@ printKey () { # function key
 
 # FixMe
 printLocalKeys () {
-	echo -e "${BAR1}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min         \e[0m"
-	echo -e "${BAR2} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]        \e[0m"
+	echo -e "${LABELS}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          \e[0m"
+	echo -e "${KEYS} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]         \e[0m"
 	echo
-	echo -e "${BAR1}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance \e[0m"
-	echo -e "${BAR2} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )  \e[0m"
+	echo -e "${LABELS}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
+	echo -e "${KEYS} [BkSpc]   {     [    ]     }    9 /   0 *   [M]     (  )  \e[0m"
 }
 
 printSettings () {
 	local -a vars
-	vars=(CACHE COLLECTION LOG MOD_INFO PLAYLIST_DIR RECENT_NAME RECENT_URL SHUFFLE THEME)
+	vars=(BLINK COLLECTION COLORING LOG MOD_INFO PLAYLIST_DIR RECENT_NAME RECENT_URL SHUFFLE)
 	for var in "${vars[@]}"; do
 		echo "${var}=${!var}"
 	done
 }
 
-# FixMe
 printStreamKeys () {
-	echo -e "${BAR1}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          \e[0m"
-	echo -e "${BAR2} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]         \e[0m"
-	echo
-	echo -e "${BAR1}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
-	echo -e "${BAR2} [BkSpc]  {     [    ]     }    9 /   0 *    M      (  )   \e[0m"
+	echo -e "${LABELS}  Stop   Pause   100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
+	echo -e "${KEYS}  [Esc]  [Spc]  [BkSpc]  {     [    ]     }    9 /   0 *   [M]    (  )    \e[0m"
 }
 
 removeCollection () {
@@ -795,16 +824,20 @@ reportUnavailability () { # streamName url code
 	responseName=$(getHttpResponseName "${3}")
 	print "HTTP ->"
 	fail "${3} ${responseName}"
+	inputKey
 }
 
-resetOtherColors () { # theme
-	[ $# -eq 1 ] || wrongArgCount "$@"
-	if [ "${1}" == true ]; then	# black bg ->
-		setPeasoupTheme
-	else # rich bg ->
-		setPeasoupTheme
-		[ "${1}" != rich ] && warn "Tried to set unknown theme '${1}'"
-	fi
+resetColoring () {
+	local x
+	x=$(getDistributor)
+	case "${x}" in
+		# TODO add more
+		Linuxmint) x=rich ;;
+		Rasbian|Ubuntu) x=true ;;
+		*) warn "Background type were not specified for ${x}"; x=true ;;
+	esac
+	[ "${x}" == rich ] && x=peasoup || x=neon
+	COLORING="${x}"
 }
 
 resetScreen () { # header
@@ -820,23 +853,39 @@ resume () {
 }
 
 saveSettings () {
-	$(echo "${THEME},${PLAYLIST_DIR},${COLLECTION},${RECENT_NAME},${RECENT_URL},${CACHE},${MOD_INFO},${SHUFFLE}" > "${SETTINGS}")
+	$(echo "${COLORING},${PLAYLIST_DIR},${COLLECTION},${RECENT_NAME},${RECENT_URL},${BLINK},${MOD_INFO},${SHUFFLE}" > "${SETTINGS}")
 	[ $? -eq 0 ] && echo "Settings saved."
 }
 
-setPeasoupTheme () {
-	BAR1="${WHITE}${GREEN_BG}" # labels
-	BAR2="${DARK}${UGLY_BG}" # keys
+setBars () { # nameOfColoring
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	case "${1}" in
+		# TODO add more...
+		#army) ;;
+		#dracula) ;;
+		peasoup) setBars2 "${WHITE}${GREEN_BG1}" "${DARK}${UGLY_BG}" ;;
+		*)	[ "${1}" == neon ] || warn "Tried to set unknown coloring '${1}'"
+			setBars2 "${BLACK}${GREEN_BG2}" "${WHITE}${BLUE_BG}"
+			;;
+	esac
+}
+
+setBars2 () { # fgBgLabels fgBgKeys
+	[ $# -eq 2 ] || wrongArgCount "$@"
+	# hasText "${1}" && invalidArg "${1}"
+	# hasText "${2}" && invalidArg "${2}"
+	LABELS="${1}"
+	KEYS="${2}"
 }
 
 start () { # args...
-	local forceCache recent
-	forceCache=false; recent=false
+	local plc recent
+	plc=true; recent=false
 	for arg in "$@"; do
 		case "${arg}" in
 			--help|--settings) batch "${arg}" "$#" ;;
-			--cache) forceCache=true ;;
 			--log) LOG="./${APPLICATION}.log" ;;
+			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
 			--reset) removeSettings ;;
 			*) invalidArg "${arg}" ;;
@@ -845,12 +894,11 @@ start () { # args...
 	# TUI session
 	log "*** ${USER} started TUI on $(now)"
 	ensureConfig
-	[ "${forceCache}" == true ] && CACHE=on
 	ensureCommands "curl" "dialog" "lsb_release" "${PLAYER}"
 	ensureInternet
 	trap die EXIT
 	clearMsg
-	blink
+	PLAYLIST_CACHE="${plc}"
 	[ "${recent}" == true ] && resume
 	mainMenu
 }
@@ -921,10 +969,10 @@ tryOn () {
 
 updatePlaybackSettings () { # checks...
 	[ $# -eq 1 ] || wrongArgCount "$@"
-	CACHE=off; MOD_INFO=off; SHUFFLE=off
+	BLINK=off; MOD_INFO=off; SHUFFLE=off
 	for x in ${1}; do
 		case "${x}" in
-			"${CACHE_ID}") CACHE=on ;;
+			"${BLINK_ID}") BLINK=on ;;
 			"${SHUFFLE_ID}") SHUFFLE=on ;;
 			"${MOD_INFO_ID}") MOD_INFO=on ;;
 			*) warn "Invalid value ${x} in ${FUNCNAME[0]}" ;;
@@ -959,8 +1007,8 @@ usage () {
 	echo "Usage: bash ${0} [BATCH | {OPTIONS}]"
 	echo "        (no args)      starts the application"
 	echo "OPTIONS:"
-	echo "        --cache        force the use of cache in playback"
 	echo "        --log          log some operative information"
+	echo "        --no-pl-cache  disable cache when playing lists"
 	echo "        --recent       continue recently played list or stream"
 	echo "        --reset        clears all stored settings"
 	echo "BATCH:"
@@ -981,25 +1029,30 @@ wrongArgCount () { # args...
 
 ### App info
 readonly APPLICATION="${0::-3}"
-readonly VERSION="v0.4 (beta)"
+readonly VERSION="v0.5 (beta)"
 readonly COPYRIGHT="Copyright (c) 2025 Janne Järvenpää <jarvenja@gmail.com>"
 readonly PRODUCT_NAME="tau Player"
 readonly PRODUCT="${PRODUCT_NAME} ${VERSION}"
-### Single colors
+### BG Colors
+readonly BLACK_BG="\e[40m"
+readonly BLUE_BG="\e[44m"
+readonly DARK="\e[38;5;235m"
+readonly GREEN_BG1="\e[42m"
+readonly GREEN_BG2="\e[102m"
+readonly UGLY_BG="\e[48;5;65m"
+### FG Colors
 readonly BLACK="\e[30m"
 readonly BLUE="\e[34m"
-readonly BLUE_BG="\e[42m"
-readonly DARK="\e[38;5;235m"
 readonly GREEN1="\e[38;5;2m"
 readonly GREEN2="\e[92m"
-readonly GREEN_BG="\e[42m"
 readonly RED="\e[1;91m"
-readonly UGLY_BG="\e[48;5;65m"
 readonly YELLOW="\e[0;93m"
 readonly WHITE="\e[97m"
+### Color bars
+readonly WIB="${WHITE}${BLACK_BG}"
 ### Effects
-readonly BLINK="\e[5m"
-readonly UNBLINK="\e[25m"
+readonly BLINKI="\e[5m"
+readonly BLINKO="\e[25m"
 ### Dialogs
 DIALOGRC=".dialogrc"
 export DIALOGRC
@@ -1007,7 +1060,7 @@ readonly DLG_OK=0
 readonly DLG_CANCEL=1
 readonly DLG_ESC=255
 ### Checklists
-readonly CACHE_ID=1
+readonly BLINK_ID=1
 readonly SHUFFLE_ID=2
 readonly MOD_INFO_ID=3
 ### Symbolic TUI Colors
@@ -1018,7 +1071,7 @@ readonly PLAYING1="${WHITE}"
 readonly PLAYING2="${GREEN2}"
 readonly WARN="${YELLOW}" # failures, warnings
 ### Dynamic effects
-declare BAR1= BAR2= BLINKI= BLINKO= #=> post initialization
+declare KEYS= LABELS= #=> post initialization
 ### Special chars
 readonly BGR="\u2261"
 readonly DASH="\u2500"
@@ -1035,8 +1088,8 @@ readonly PLAY_PARAMS="-msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg"
 readonly SETTINGS="./${APPLICATION}.cvs"
 declare -i -r CACHE_MIN=80
 declare -i -r CACHE_SIZE=16384
-declare -i -r THEME_MAX_LENGHT=4
-declare CACHE= COLLECTION= LOG= MOD_INFO= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= SHUFFLE= THEME= #=> post initialization
+declare -i -r COLORING_MAX=7
+declare BLINK= COLLECTION= COLORING= LOG= MOD_INFO= PLAYLIST_CACHE= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= SHUFFLE= #=> post initialization
 ### Error policy
 set -uo pipefail
 tryOn
