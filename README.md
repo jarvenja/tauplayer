@@ -13,14 +13,20 @@ _tauplayer_ alias Terminal Audio Player
   ```
   sudo apt-get install curl dialog lsb-release mplayer
   ```
-  
+
 ### Installing
 
-1) Download the latest available version from https://github.com/jarvenja/tauplayer/tags.
+1) Download the latest version from https://github.com/jarvenja/tauplayer/tags.
 2) Extract package into e.g. /$HOME/user/tauplayer
 
 There is no installer. You can now execute the program.
-  
+
+Later, you can always update it to the latest _development version_ just by executing the updater.
+
+  ```
+  bash updater.sh
+  ```
+
 ### Executing the program
 
 You can start using _tauplayer_ application by typing the following in terminal:
@@ -34,9 +40,9 @@ bash tauplayer.sh --help
 ```
 _tauplayer_ creates one or two data files in its installation directory during use.
 
-### Documentation
+### Using 
 
-For please view for more details https://github.com/jarvenja/tauplayer/docs.
+For more information how to use tauplayer please view the product page https://jarvenja.github.io/tauplayer/.
 
 ## Authors
 
