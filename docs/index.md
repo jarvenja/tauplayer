@@ -1,14 +1,14 @@
 ## Why tauplayer?
 
-- It's an unique application. You can play music files or listen radio streams around the world and manage them by collections.
-- It's easy usable and minimal. You don't need to remember anything beforehand.
-- It doesn't have a complex GUI at all. Just a simple user interface with a keyboard.
-- It's non-commercial and almost ad-free. Perfect for relaxing.
-- It's totally free and you can start using it in a minute.
-- It's ligthweight, and can be also run directly from a server.
-- It's targeted to work on countless GNU/Linux based OSes.
-- It's very customizable so programmers could easily add their personal extra features into the code.
-- It also supports marginal and alternative music for creative and intellectual minds.
+1. It's an unique application. You can play music files or listen radio streams around the world and manage them by collections.
+2. It's easy usable and minimal. You don't need to remember anything beforehand.
+3. It doesn't have a complex GUI at all. Just a simple user interface with a keyboard.
+4. It's non-commercial and almost ad-free. Perfect for relaxing.
+5. It's totally free and you can start using it in a minute.
+6. It's ligthweight, and can be also run directly from a server.
+7. It's targeted to work on countless GNU/Linux based OSes.
+8. It's very customizable so programmers could easily add their personal extra features into the code.
+9. It also supports marginal and alternative music for creative and intellectual minds.
 
 ## Basic Terms
 
