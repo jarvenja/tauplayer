@@ -7,7 +7,7 @@
 - It's totally free and you can start using it in a minute.
 - It's ligthweight, and can be also run directly from a server.
 - It's targeted to work on countless GNU/Linux based OSes.
-- It's very customizable so every programmer could easily add their personal extra features into the code.
+- It's very customizable so programmers could easily add their personal extra features into the code.
 - It also supports marginal and alternative music for creative and intellectual minds.
 
 ## Basic Terms
@@ -32,7 +32,7 @@ When launched it opens the _Main_ menu, where you can select the action of your 
 
 The following are some of functions described step by step.
 
-### Change Collection
+### Change Active Collection
 
 There is always one collection active or selected (as retrogames in the picture below).
 
@@ -48,8 +48,8 @@ You can change the active collection this way:
 ### Play local audio files from playlist
 
 - Select _Play List_ from _Main_ menu.
-- _tauplayer_ keeps asking the _Playlist Directory_where to find the alternatives to play until you type a valid name for existing new or current one.
-- After you commit the directory, _tauplayer_ shows playlist files founded in _Playlist Directory_.
+- _tauplayer_ keeps asking the _Playlist Directory_ where to find the alternatives to play until you type a valid name for existing new or current one.
+- After you commit the _Playlist Directory_ _tauplayer_ shows playlist files found.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
   - If Shuffle is **checked** the list of songs are played in **random** order.
   - If Shuffle is **not** checked the list of songs are played in order they **appear** in current playlist.
