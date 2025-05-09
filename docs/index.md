@@ -1,7 +1,3 @@
-# tauplayer
-
-_tauplayer_ alias Terminal Audio Player 
-
 ## Why tauplayer?
 
 - It's an unique application. You can play music files or listen radio streams around the world and manage them by collections.
@@ -14,9 +10,9 @@ _tauplayer_ alias Terminal Audio Player
 - It's very customizable so every programmer could easily add their personal extra features into the code.
 - It also supports marginal and alternative music for creative and intellectual minds.
 
-## Terms
+## Basic Terms
 
-Understanding these terms will help you a bit:
+If the technical things are not very familiar to you, these things terms may help:
 - **Cache** is a memory buffer, which player reserves for audio playback.
 - **Collection** is a group of named streams, which are stored in _.cvs_ file in its name and _/collections_ subdirectory under installation directory.
 - **Player** is audio player application, which tauplayer uses for playback.
@@ -28,13 +24,21 @@ Understanding these terms will help you a bit:
 
 ## Usage
 
-_tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main_ menu, where you can select the action of your choice.
+_tauplayer_ is used via Text-based User Interface (TUI).
+
+When launched it opens the _Main_ menu, where you can select the action of your choice.
+
+![main-menu](https://github.com/user-attachments/assets/b191e645-c458-4ef1-825c-403189dfcf98)
 
 The following are some of functions described step by step.
 
 ### Change Collection
 
-There is always one collection active or selected. At very first time, tauplayer creates a default collection named as _'favorites'_ for you.
+There is always one collection active or selected (as retrogames in the picture below).
+
+![change-collection](https://github.com/user-attachments/assets/6fee6519-5925-41aa-9e5c-358c3ae6ac8b)
+
+At very first time, tauplayer creates a default collection named as _'favorites'_ for you.
 
 You can change the active collection this way:
 - Select _Change Active Collection_ from _Main_ menu and press _Enter_ when _Select_ is highlighted.
@@ -61,7 +65,3 @@ You can change the active collection this way:
 
 - During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 - Please note that all of the other keys are still enabled. Therefore, please avoid pressing any unlisted keys since they can confuse the player in some situations.
-
-## Improving playback quality
-
-This section will be updated later.
