@@ -2,11 +2,21 @@
 
 _tauplayer_ alias Terminal Audio Player 
 
-## Usage
+## Why tauplayer?
 
-_tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main_ menu, where you can select the action of your choice.
+- It's an unique application. You can play music files or listen radio streams around the world and manage them by collections.
+- It's easy usable and minimal. You don't need to remember anything beforehand.
+- It doesn't have a complex GUI at all. Just a simple user interface with a keyboard.
+- It's non-commercial and almost ad-free. Perfect for relaxing.
+- It's totally free and you can start using it in a minute.
+- It's ligthweight, and can be also run directly from a server.
+- It's targeted to work on countless GNU/Linux based OSes.
+- It's very customizable so every programmer could easily add their personal extra features into the code.
+- It also supports marginal and alternative music for creative and intellectual minds.
 
-Understanding these terms makes using a bit easier:
+## Terms
+
+Understanding these terms will help you a bit:
 - **Cache** is a memory buffer, which player reserves for audio playback.
 - **Collection** is a group of named streams, which are stored in _.cvs_ file in its name and _/collections_ subdirectory under installation directory.
 - **Player** is audio player application, which tauplayer uses for playback.
@@ -15,6 +25,10 @@ Understanding these terms makes using a bit easier:
 - **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _collection_ files.
 - **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
 - **(Text) terminal** is a text input and output environment, where you can start and run commands.
+
+## Usage
+
+_tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main_ menu, where you can select the action of your choice.
 
 The following are some of functions described step by step.
 
@@ -25,20 +39,13 @@ There is always one collection active or selected. At very first time, tauplayer
 You can change the active collection this way:
 - Select _Change Active Collection_ from _Main_ menu and press _Enter_ when _Select_ is highlighted.
 - You can see the collection name at the end of the titlebar line on the top.
-- Now you can _Listen_, _Add_ and _Remove_ streams of the active collection.
-
-### Change Playlist Directory
-
-- Select _Change Playlist Directory_ from _Main_ menu.
-- When typing new _Playlist Directory_ you need to remember it correctly. 
-- _tauplayer_ keeps asking it until you type a valid name for existing new or current one.
-- You can still cancel the action. Just leave the old directory as it is and press _Enter_.
+- Now you can _Listen_, _Add_ and _Remove_ streams of that collection.
 
 ### Play local audio files from playlist
 
 - Select _Play List_ from _Main_ menu.
-- _tauplayer_ asks Select _Play List_ from _Main_ menu.
-- After a moment, _tauplayer_ shows playlist files founded in _Playlist Directory_.
+- _tauplayer_ keeps asking the _Playlist Directory_where to find the alternatives to play until you type a valid name for existing new or current one.
+- After you commit the directory, _tauplayer_ shows playlist files founded in _Playlist Directory_.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
   - If Shuffle is **checked** the list of songs are played in **random** order.
   - If Shuffle is **not** checked the list of songs are played in order they **appear** in current playlist.
