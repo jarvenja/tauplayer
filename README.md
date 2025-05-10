@@ -1,9 +1,9 @@
-| Available Versions | Link |
-|---|---|
-| Product releases | [View](https://github.com/jarvenja/tauplayer/tags) |
-| Latest development | [Download](https://github.com/jarvenja/tauplayer/archive/main.zip) |
-
 ## Getting Started
+
+### Downloads
+
+- [View](https://github.com/jarvenja/tauplayer/tags) list and download latest minor beta version.
+- [Download](https://github.com/jarvenja/tauplayer/archive/main.zip) directly the latest development version _(recommended)_.
 
 ### Dependencies
 
@@ -17,7 +17,7 @@
 
 ### Installing
 
-1) Download the latest version above. 
+1) Download the version of your choice above. 
 2) Extract package into e.g. /$HOME/user/tauplayer
 
 There is no installer. You can now execute the program.
