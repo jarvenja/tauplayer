@@ -1,6 +1,7 @@
-# tauplayer
-
-_tauplayer_ alias Terminal Audio Player 
+| Available Versions | Link |
+|---|---|
+| Product releases | [View](https://github.com/jarvenja/tauplayer/tags) |
+| Latest development | [Download](https://github.com/jarvenja/tauplayer/archive/main.zip) |
 
 ## Getting Started
 
@@ -16,12 +17,12 @@ _tauplayer_ alias Terminal Audio Player
 
 ### Installing
 
-1) Download the latest version from https://github.com/jarvenja/tauplayer/tags.
+1) Download the latest version above. 
 2) Extract package into e.g. /$HOME/user/tauplayer
 
 There is no installer. You can now execute the program.
 
-Later, you can always update it to the latest _development version_ just by executing the updater.
+Later, you can always update it to the latest **development version** just by executing the updater.
 
   ```
   bash updater.sh
