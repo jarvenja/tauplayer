@@ -41,7 +41,7 @@ bash tauplayer.sh --help
 ```
 _tauplayer_ creates one or two data files in its installation directory during use.
 
-### Using 
+### Use
 
 For more information how to use tauplayer please view the product page https://jarvenja.github.io/tauplayer/.
 
