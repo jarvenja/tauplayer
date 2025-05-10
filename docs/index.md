@@ -10,6 +10,8 @@
 8. It's very customizable so programmers could easily add their personal extra features into the code.
 9. It also supports marginal and alternative music for creative and intellectual minds.
 
+**Downloads** and _Getting Started_ documentation are available [here](https://github.com/jarvenja/tauplayer/edit/main/README.md).
+
 ## Basic Terms
 
 If the technical things are not very familiar to you, these things terms may help:
