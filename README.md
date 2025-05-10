@@ -2,8 +2,8 @@
 
 ### Downloads
 
-- [View](https://github.com/jarvenja/tauplayer/tags) list and download latest minor beta version.
-- [Download](https://github.com/jarvenja/tauplayer/archive/main.zip) directly the latest development version _(recommended)_.
+[View](https://github.com/jarvenja/tauplayer/tags) and select the latest tagged minor version _OR_ \
+[Download](https://github.com/jarvenja/tauplayer/archive/main.zip) directly the latest development version _(recommended)_.
 
 ### Dependencies
 
