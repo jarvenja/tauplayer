@@ -1,15 +1,12 @@
 ## Getting Started
 
-### Downloads
-
-- [View](https://github.com/jarvenja/tauplayer/tags) and select the latest (tagged) minor version **OR**
-- [Download](https://github.com/jarvenja/tauplayer/archive/main.zip) directly the latest **development version** _(recommended)_.
+Latest Versions: [v0.4-beta](https://github.com/jarvenja/tauplayer/releases/tag/v0.4-beta) or [Development Version](https://github.com/jarvenja/tauplayer/archive/main.zip) (recommended)
 
 ### Dependencies
 
-1) Linux based operating system.
-2) Must be run only in _bash shell_.
-3) You can install additional possibly missing commands (dependencies) into your system now or later guided by _tauplayer_ as authorized user.
+1) Linux based operating system
+2) Must be run only in _bash shell_
+3) Install additional possibly missing commands (dependencies) into your system as authorized user now or later guided by _tauplayer_.
 
   ```
   sudo apt-get install curl dialog lsb-release mplayer
