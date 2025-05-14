@@ -8,22 +8,6 @@
 # About principles:
 # 1. bash scripting has somewhat different rules (bashism) than true programming languages
 
-about () {
-	resetScreen "About"
-	print "Terminal Audio Player (${PRODUCT_NAME})\n\n"
-	print "${COPYRIGHT}\n\n"
-	print "Your terminal type is '${TERM}',\n"
-	print "which may affect to display correct UI colors.\n\n"
-	print "Features:\n\n"
-	print "> Easy playing local playlists\n"
-	print "> Easy playing radio streams\n"
-	print "> Managing named collections of streams\n"
-	print "> Playback support via mplayer\n\n"
-	print "- Does not support spaces in file names.\n\n"
-	print "For more use information please see\n"
-	print "=> https://github.com/jarvenja/tauplayer/blob/main/README.md"
-	inputKey
-}
 
 addValidStream () { # validName validUrl
 	local err file
@@ -46,8 +30,10 @@ archive () { # collection
 batch () { # arg argc
 	[ "${2}" -ne 1 ] && fatal "${1} MUST be run alone!"
 	case "${1}" in
+		--colors) displayColors ;;
 		--help) usage ;;
 		--settings) loadSettings "${SETTINGS}"; printSettings ;;
+		--term) echo "Your terminal type is '${TERM}' which may affect to see correct colors or letters." ;;
 		*) invalidArg "${1}" ;;
 	esac
 	popd > /dev/null
@@ -134,9 +120,13 @@ die () {
 	echo "Until we hear again..."
 }
 
-displayTxt () { # txtFile
-	[ $# -eq 1 ] || wrongArgCount "$@"
-	$(cat "${1}")
+displayColors () {
+	local -a colors
+	colors=( neon peasoup )
+	for c in "${colors[@]}"; do
+		setBars "${c}"
+		# TODO draw bars
+	done
 }
 
 ensureBash () {
@@ -353,42 +343,6 @@ horizon () { # [width]
 	done
 }
 
-infoMenu () {
-	local -i dlg
-	local -a menu
- 		menu=( \
-			"l" "License..." \
- 			"v" "Read me..." \
- 			"t" "tauplayer..." \
-        )
-       	tput civis || terror
-	clearMsg
-	tput civis || terror
-	tryOff
-	choice=$(dialog \
-		--stdout \
-        --backtitle "$(getTitle)" \
-        --title " ${1} Stream " \
-        --clear \
-        --ok-label "${1}" \
-        --menu "\n${MSG}" 0 0 16 \
-         "${streams[@]}"
-	)
-	dlg=$?
-	tryOn
-	tput cnorm || terror
-	if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
-		case "${choice}" in
-			l) cat "./LICENSE" ;;
-			r) cat "./README.md" ;;
-			t) about ;;
-			*) invalidArg "${choice}" ;;
-		esac
-	else
-		handleDlgReturn "${dlg}"
-	fi
-}
-
 informWaiting () { # slowOperation
 	echo -ne "${1}..."
 }
@@ -496,7 +450,7 @@ loadSettings () { # settingsFile
 		file=$(getCollectionPath "${collection}")
 		[ -f "${file}" ] && COLLECTION="${collection}"
 	fi
-	# set theme dependent values..
+	# set coloring dependent values..
 	[ -z "${COLORING}" ] || [ "${#COLORING}" -gt "${COLORING_MAX}" ] && resetColoring
 	setBars "${COLORING}" || true
 	# ensure playback preferences..
@@ -526,7 +480,7 @@ mainMenu () {
 			"a" "Add New Stream..." \
 			"u" "Update Stream..." \
 			"e" "Remove Stream..." \
-			"i" "Info..."
+			"i" "View license..."
 		)
 		tput civis || terror
 		tryOff
@@ -557,7 +511,7 @@ mainMenu () {
 				a) inputNewStream || true ;;
 				u) streamMenu "Update" || true ;;
 				e) streamMenu "Remove" || true ;;
-				i) infoMenu || true ;;
+				i) less "./LICENSE" || true ;;
 				*) invalidArg "${choice}" ;;
 			esac
 		else
@@ -627,7 +581,7 @@ play () { # [streamName] url
 						;;
 				esac
 			fi
-  		done
+	  	done
 	}
 	tryOn # back to default
 	report "Playback stopped"
@@ -836,6 +790,7 @@ resetColoring () {
 		Rasbian|Ubuntu) x=true ;;
 		*) warn "Background type were not specified for ${x}"; x=true ;;
 	esac
+	#=> map temporary x to colorings
 	[ "${x}" == rich ] && x=peasoup || x=neon
 	COLORING="${x}"
 }
@@ -883,7 +838,7 @@ start () { # args...
 	plc=true; recent=false
 	for arg in "$@"; do
 		case "${arg}" in
-			--help|--settings) batch "${arg}" "$#" ;;
+			--colors|--help|--settings|--term) batch "${arg}" "$#" ;;
 			--log) LOG="./${APPLICATION}.log" ;;
 			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
@@ -1012,9 +967,18 @@ usage () {
 	echo "        --recent       continue recently played list or stream"
 	echo "        --reset        clears all stored settings"
 	echo "BATCH:"
+	echo "        --colors       show available colorings"
 	echo "        --help         show this information"
 	echo "        --settings     show stored settings values"
+	echo "        --term         show terminal type"
+	echo
+	echo "For more information please follow the links:"
+	echo "[] Getting Started => https://github.com/jarvenja/tauplayer/"
+	echo "[] User Guidelines => https://jarvenja.github.io/tauplayer/"
+	echo "[] License => https://github.com/jarvenja/tauplayer/blob/main/LICENSE"
+	echo
 }
+
 
 warn () { # msg
 	log "Warning: ${1}"

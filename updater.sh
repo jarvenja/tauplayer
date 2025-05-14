@@ -6,7 +6,7 @@ fatal () { # error
 }
 
 main () {
-	report "*** ${APP} Updater"
+	success "*** ${APP} Updater"
 	echo "This will update the latest (possibly UNTESTED and RISKY) version in current directory."
 	read -p "Continue? (Y=Yes, N=No) " -n 1 -r key
 	echo
@@ -17,7 +17,7 @@ main () {
 	esac
 }
 
-report () { # msg
+success () { # msg
 	echo -e "${GREEN}${1}${C0}"
 }
 
@@ -26,7 +26,7 @@ updateLatestMain () {
 	pkgName="${BRANCH}.zip"
 	tmpDir=$(mktemp -d -t "${APP}-XXXXX")
 	[ -z "${tmpDir}" ] && fatal "Failed to create temporary directory!"
-	report "Created temporary directory ${tmpDir}."
+	success "Created temporary directory ${tmpDir}."
  	echo "Downloading..."
 	pkg="${tmpDir}/${pkgName}"
 	srcDir="${tmpDir}/${APP}-${BRANCH}"
@@ -36,8 +36,8 @@ updateLatestMain () {
         && rm "${pkg}" \
 		&& cp -r "${srcDir}"/* .
     if [ $? -eq 0 ]; then
-		report "Update succeeded!"
-		rm -r "${tmpDir}" && report "Temporary directories removed."
+		success "Update succeeded!"
+		rm -r "${tmpDir}" && success "Temporary directories removed."
 	else
 		fatal "Update failed!"
     fi
