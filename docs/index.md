@@ -10,19 +10,20 @@
 8. It's very customizable so programmers could easily add their personal extra features into the code.
 9. It also supports marginal and alternative music for creative and intellectual minds.
 
-**Downloads** and _Getting Started_ documentation are available [here](https://github.com/jarvenja/tauplayer/).
+You can find the **Download** link at top of the [Getting Started](https://github.com/jarvenja/tauplayer/) guidelines.
 
 ## Basic Terms
 
 If the technical things are not very familiar to you, these things terms may help:
-- **Cache** is a memory buffer, which player reserves for audio playback.
-- **Collection** is a group of named streams, which are stored in _.cvs_ file in its name and _/collections_ subdirectory under installation directory.
-- **Player** is audio player application, which tauplayer uses for playback.
-- **Playlist** is a formatted list of links to audio files. _tauplayer_ supports currently playlists only in _.m3u_ format.
-- **Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists.
-- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _collection_ files.
-- **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
-- **(Text) terminal** is a text input and output environment, where you can start and run commands.
+
+**Cache** is a memory buffer, which player reserves for audio playback. \
+**Collection** is a group of named streams, which are stored in _.cvs_ file in its name and _/collections_ subdirectory under installation directory. \
+**Player** is audio player application, which tauplayer uses for playback. \
+**Playlist** is a formatted list of links to audio files. _tauplayer_ supports currently playlists only in _.m3u_ format. \
+**Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists. \
+**(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _collection_ files. \
+**tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_. \
+**(Text) terminal** is a text input and output environment, where you can start and run commands.
 
 ## Usage
 
@@ -50,8 +51,11 @@ You can change the active collection this way:
 ### Play local audio files from playlist
 
 - Select _Play List_ from _Main_ menu.
-- _tauplayer_ keeps asking the _Playlist Directory_ where to find the alternatives to play until you type a valid name for existing new or current one.
-- After you commit the _Playlist Directory_ _tauplayer_ shows playlist files found.
+- _tauplayer_ asks the _Playlist Directory_ where to find the alternatives to play until you type a valid directory.
+- After you commit the _Playlist Directory_ _tauplayer_ shows playlist files found (as picture below).
+
+![playlists-found](https://github.com/user-attachments/assets/cf64dc8f-567d-43d5-8fc7-1da7d619e87d)
+
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
   - If Shuffle is **checked** the list of songs are played in **random** order.
   - If Shuffle is **not** checked the list of songs are played in order they **appear** in current playlist.
@@ -60,6 +64,9 @@ You can change the active collection this way:
 
 - Select _Play Radio Stream_ from _Main_ menu.
 - Select stream to _Listen_ from opening _Stream_ menu.
+
+![play-streams](https://github.com/user-attachments/assets/a89c55ec-5e40-4673-a096-1ecd2fe67257)
+
 - If reached, _tauplayer_ starts a playback session where it tries to play the stream with audio player.
 - If the Stream is not reached for some reason _tauplayer_ displays _Stream Not Available_ screen with related information.
 
