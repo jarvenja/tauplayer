@@ -8,7 +8,6 @@
 # About principles:
 # 1. bash scripting has somewhat different rules (bashism) than true programming languages
 
-
 addValidStream () { # validName validUrl
 	local err file
 	[ $# -ne 2 ] && invalidArg "${1} MUST be run alone!"
@@ -30,10 +29,12 @@ archive () { # collection
 batch () { # arg argc
 	[ "${2}" -ne 1 ] && fatal "${1} MUST be run alone!"
 	case "${1}" in
-		--colors) displayColors ;;
+		--chance-colors) changeColoring ;;
 		--help) usage ;;
+		--license) viewLicense ;;
 		--settings) loadSettings "${SETTINGS}"; printSettings ;;
-		--term) echo "Your terminal type is '${TERM}' which may affect to see correct colors or letters." ;;
+		--show-colors) showColors ;;
+		--term) echo "Your terminal type is '${TERM}' which may affect to see correct colors or characters." ;;
 		*) invalidArg "${1}" ;;
 	esac
 	popd > /dev/null
@@ -52,6 +53,20 @@ catch () {
 	lineno="${BASH_LINENO}"
 	printf "${WARN}The line %d: %s\nreturned %d\n${NORMAL}" "${lineno}" "${cmd}" "${code}"
 	# FixMe: Printing multiple lines...
+}
+
+changeColoring () {
+	local c
+	c="${COLORING}"
+	showColors
+	read -r -p "Change current coloring to: " -i "${COLORING}" -e c
+	if [[ ${COLORINGS[@]} =~ ${c} ]]; then
+		loadSettings "${SETTINGS}"
+		COLORING="${c}"
+		saveSettings
+	else
+		echo "Invalid input coloring."
+	fi
 }
 
 check () { # checkvalue
@@ -118,15 +133,6 @@ die () {
 	trap - EXIT
 	# remove temp
 	echo "Until we hear again..."
-}
-
-displayColors () {
-	local -a colors
-	colors=( neon peasoup )
-	for c in "${colors[@]}"; do
-		setBars "${c}"
-		# TODO draw bars
-	done
 }
 
 ensureBash () {
@@ -511,7 +517,7 @@ mainMenu () {
 				a) inputNewStream || true ;;
 				u) streamMenu "Update" || true ;;
 				e) streamMenu "Remove" || true ;;
-				i) less "./LICENSE" || true ;;
+				i) viewLicense || true ;;
 				*) invalidArg "${choice}" ;;
 			esac
 		else
@@ -610,11 +616,9 @@ playbackMenu () {
 playList () {
 	local pl
 	resetScreen "Play list"
-	print "Scanning of playlists\n"
-	print "- type full path to existing directory\n"
-	print "- or leave it empty to cancel\n\n"
+	print "I will list you all .m3u playlists under...\n\n"
 	while :; do
-		read -r -p "> Directory: " -i "${PLAYLIST_DIR}" -e dir
+		read -r -p "> Scanning directory: " -i "${PLAYLIST_DIR}" -e dir
 		if [ $? -ne 0 ]; then
 			log "Reading new directory name (${dir}) returned $?"
 			report "Read Error"
@@ -710,13 +714,16 @@ printKey () { # function key
 	echo -e " ${1}  ${BOLD}${2}${NORMAL}"
 }
 
-# FixMe
 printLocalKeys () {
-	echo -e "${LABELS}  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          \e[0m"
-	echo -e "${KEYS} [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]         \e[0m"
+	printUpperBar "  Stop  Pause  Prev  Next -10s  +10s -1min  +1min          \n"
+	printLowerBar " [Esc]  [Spc]    <    >   [<-]  [->]  [Up]  [Down]         \n"
 	echo
-	echo -e "${LABELS}  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
-	echo -e "${KEYS} [BkSpc]   {     [    ]     }    9 /   0 *   [M]     (  )  \e[0m"
+	printUpperBar "  100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \n"
+	printLowerBar " [BkSpc]   {     [    ]     }    9 /   0 *   [M]     (  )  \n"
+}
+
+printLowerBar () { # txt
+	echo -ne "${KEYS}${1}\e[0m"
 }
 
 printSettings () {
@@ -728,8 +735,12 @@ printSettings () {
 }
 
 printStreamKeys () {
-	echo -e "${LABELS}  Stop   Pause   100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \e[0m"
-	echo -e "${KEYS}  [Esc]  [Spc]  [BkSpc]  {     [    ]     }    9 /   0 *   [M]    (  )    \e[0m"
+	printUpperBar "  Stop   Pause   100%   50%  -10%  +10%   x2   Vol-  Vol+  Mute  Balance  \n"
+	printLowerBar "  [Esc]  [Spc]  [BkSpc]  {     [    ]     }    9 /   0 *   [M]    (  )    \n"
+}
+
+printUpperBar () { # txt
+	echo -ne "${LABELS}${1}\e[0m"
 }
 
 removeCollection () {
@@ -816,11 +827,10 @@ setBars () { # nameOfColoring
 	[ $# -eq 1 ] || wrongArgCount "$@"
 	case "${1}" in
 		# TODO add more...
-		#army) ;;
-		#dracula) ;;
+		neon) setBars2 "${BLACK}\e[48;5;46m" "${BLACK}\e[48;5;226m" ;;
 		peasoup) setBars2 "${WHITE}${GREEN_BG1}" "${DARK}${UGLY_BG}" ;;
-		*)	[ "${1}" == neon ] || warn "Tried to set unknown coloring '${1}'"
-			setBars2 "${BLACK}${GREEN_BG2}" "${WHITE}${BLUE_BG}"
+		*)	[ "${1}" = ice ] || warn "Tried to set unknown coloring '${1}'"
+			setBars2 "${WHITE}${BLUE_BG2}" "${BLUE}${WBG}" # ice is default
 			;;
 	esac
 }
@@ -833,12 +843,27 @@ setBars2 () { # fgBgLabels fgBgKeys
 	KEYS="${2}"
 }
 
+showColors () {
+	for c in "${COLORINGS[@]}"; do
+		setBars "${c}"
+		printf " "
+		printUpperBar " ${c} "
+	done
+	echo
+	for c in "${COLORINGS[@]}"; do
+		setBars "${c}"
+		printf " "
+		printLowerBar " ${c} "
+	done
+	echo
+}
+
 start () { # args...
 	local plc recent
 	plc=true; recent=false
 	for arg in "$@"; do
 		case "${arg}" in
-			--colors|--help|--settings|--term) batch "${arg}" "$#" ;;
+			--chance-colors|--show-colors|--help|--license|--settings|--term) batch "${arg}" "$#" ;;
 			--log) LOG="./${APPLICATION}.log" ;;
 			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
@@ -960,25 +985,29 @@ usage () {
 	echo "*** ${PRODUCT} - ${COPYRIGHT}"
 	echo
 	echo "Usage: bash ${0} [BATCH | {OPTIONS}]"
-	echo "        (no args)      starts the application"
-	echo "OPTIONS:"
-	echo "        --log          log some operative information"
-	echo "        --no-pl-cache  disable cache when playing lists"
-	echo "        --recent       continue recently played list or stream"
-	echo "        --reset        clears all stored settings"
+	echo "        (no args)       starts the application"
 	echo "BATCH:"
-	echo "        --colors       show available colorings"
-	echo "        --help         show this information"
-	echo "        --settings     show stored settings values"
-	echo "        --term         show terminal type"
+	echo "        --chance-colors change playback bar coloring"
+	echo "        --help          show this information"
+	echo "        --license       show license information only"
+	echo "        --settings      show stored settings values"
+	echo "        --show-colors   show available playback bar colorings"
+	echo "        --term          show terminal type"
+	echo "OPTIONS:"
+	echo "        --log           log some operative information"
+	echo "        --no-pl-cache   disable cache when playing lists"
+	echo "        --recent        continue recently played list or stream"
+	echo "        --reset         clears all stored settings and sets default"
 	echo
 	echo "For more information please follow the links:"
-	echo "[] Getting Started => https://github.com/jarvenja/tauplayer/"
-	echo "[] User Guidelines => https://jarvenja.github.io/tauplayer/"
-	echo "[] License => https://github.com/jarvenja/tauplayer/blob/main/LICENSE"
-	echo
+	echo "[] Getting Started -> https://github.com/jarvenja/tauplayer/"
+	echo "[] User Guidelines -> https://jarvenja.github.io/tauplayer/"
+	echo "[] License -> https://github.com/jarvenja/tauplayer/blob/main/LICENSE"
 }
 
+viewLicense () {
+	less "./LICENSE"
+}
 
 warn () { # msg
 	log "Warning: ${1}"
@@ -999,13 +1028,18 @@ readonly PRODUCT_NAME="tau Player"
 readonly PRODUCT="${PRODUCT_NAME} ${VERSION}"
 ### BG Colors
 readonly BLACK_BG="\e[40m"
+readonly BLOODY_BG="\e[48;5;1m"
 readonly BLUE_BG="\e[44m"
+readonly BLUE_BG2="\e[48;5;4m"
 readonly DARK="\e[38;5;235m"
 readonly GREEN_BG1="\e[42m"
 readonly GREEN_BG2="\e[102m"
+readonly PURPLE_BG="\e[48;5;99m"
 readonly UGLY_BG="\e[48;5;65m"
+readonly WBG="\e[107m"
 ### FG Colors
 readonly BLACK="\e[30m"
+readonly BLOODY="\e[38;5;1m"
 readonly BLUE="\e[34m"
 readonly GREEN1="\e[38;5;2m"
 readonly GREEN2="\e[92m"
@@ -1013,6 +1047,7 @@ readonly RED="\e[1;91m"
 readonly YELLOW="\e[0;93m"
 readonly WHITE="\e[97m"
 ### Color bars
+declare -a -r COLORINGS=( ice neon peasoup )
 readonly WIB="${WHITE}${BLACK_BG}"
 ### Effects
 readonly BLINKI="\e[5m"

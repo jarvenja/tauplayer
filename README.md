@@ -1,6 +1,6 @@
 ## Getting Started
 
-Latest Versions: [v0.4-beta](https://github.com/jarvenja/tauplayer/releases/tag/v0.4-beta) or [Development Version](https://github.com/jarvenja/tauplayer/archive/main.zip) (recommended)
+Latest Versions: [v0.4-beta](https://github.com/jarvenja/tauplayer/releases/tag/v0.4-beta) or under [Development](https://github.com/jarvenja/tauplayer/archive/main.zip) (recommended)
 
 ### Dependencies
 
@@ -48,5 +48,6 @@ Please send bug reports to jarvenja@gmail.com.
 
 ## License
 
-This project is licensed under _GPL License v3_ - see the _LICENSE.md_ file for details.
+This project is licensed under _GPL License v3_.
+See the [LICENSE](https://github.com/jarvenja/tauplayer/blob/main/LICENSE) file for details.
 
