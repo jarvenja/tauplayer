@@ -31,7 +31,7 @@ _tauplayer_ is used via Text-based User Interface (TUI).
 
 When launched it opens the _Main_ menu, where you can select the action of your choice.
 
-![main-menu](https://github.com/user-attachments/assets/b191e645-c458-4ef1-825c-403189dfcf98)
+![main-menu](https://github.com/user-attachments/assets/6a774460-fa64-4534-94c8-8c6bf5dfe45a)
 
 The following are some of functions described step by step.
 
@@ -57,7 +57,7 @@ You can change the active collection this way:
 ![playlists-found](https://github.com/user-attachments/assets/cf64dc8f-567d-43d5-8fc7-1da7d619e87d)
 
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs.
-  - If Shuffle is **checked** the list of songs are played in **random** order.
+  - If Shuffle is **checked** in _Playback preferences_ the list of songs are played in **random** order.
   - If Shuffle is **not** checked the list of songs are played in order they **appear** in current playlist.
 
 ### Play a radio stream from active collection
