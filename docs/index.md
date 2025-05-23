@@ -75,6 +75,6 @@ You can change the active collection this way:
 - During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 - Please note that all of the other keys are still enabled. Therefore, please avoid pressing any unlisted keys since they can confuse the player in some situations.
 
-![play-stream](https://github.com/user-attachments/assets/69f0d04d-f86e-4c3f-9353-2bb092960f74)
+![play-stream](https://github.com/user-attachments/assets/cbffcbb7-355d-4e8f-afa0-989c1e6978f0)
 
-_The figure above shows tauplayer playing a stream in Linux Mint and available key commands._
+_The figure above shows tauplayer playing a radio stream in Linux Mint._
