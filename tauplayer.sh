@@ -799,7 +799,8 @@ resetColoring () {
 		*) warn "Background type were not specified for ${x}"; x=true ;;
 	esac
 	#=> map temporary x to colorings
-	[ "${x}" == rich ] && x=peasoup || x=neon
+	# [ "${x}" == rich ] && x=forest || x=forest
+	x=forest
 	COLORING="${x}"
 }
 
