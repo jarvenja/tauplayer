@@ -29,11 +29,11 @@ archive () { # collection
 batch () { # arg argc
 	[ "${2}" -ne 1 ] && fatal "${1} MUST be run alone!"
 	case "${1}" in
-		--chance-colors) changeColoring ;;
+		--colors) showColors ;;
+		--colors=*) changeColors "${1:9}" ;;
 		--help) usage ;;
 		--license) viewLicense ;;
-		--settings) loadSettings "${SETTINGS}"; printSettings ;;
-		--show-colors) showColors ;;
+		--settings) loadSettings "${SETTINGS}" ; printSettings ;;
 		--term) echo "Your terminal type is '${TERM}' which may affect to see correct colors or characters." ;;
 		*) invalidArg "${1}" ;;
 	esac
@@ -55,17 +55,13 @@ catch () {
 	# FixMe: Printing multiple lines...
 }
 
-changeColoring () {
-	local c
-	c="${COLORING}"
-	showColors
-	read -r -p "Change current coloring to: " -i "${COLORING}" -e c
-	if [[ ${COLORINGS[@]} =~ ${c} ]]; then
+changeColors () { # newColor
+	if [[ ${COLORINGS[@]} =~ ${1} ]]; then
 		loadSettings "${SETTINGS}"
-		COLORING="${c}"
+		COLORING="${1}"
 		saveSettings
-	else
-		echo "Invalid input coloring."
+	else 
+		echo "Unknown color ${1}."
 	fi
 }
 
@@ -444,7 +440,7 @@ invalidArg () { # arg
 	fatal "Invalid argument '${1}' in ${FUNCNAME[1]}"
 }
 
-loadSettings () { # settingsFile
+loadSettings () { # [settingsFile]
 	local collection file pld
 	[ $# -eq 1 ] || wrongArgCount "$@"
 	IFS=, read COLORING pld collection RECENT_NAME RECENT_URL BLINK MODULE_INFO SHUFFLE < "${1}"
@@ -555,7 +551,7 @@ play () { # [streamName] url
 	fi
 	RECENT_URL="${2}"
 	cmd="${PLAYER} ${PLAY_PARAMS} ${playback[*]} ${2}"
-	log "${cmd}"
+	# log "${cmd}"
 	tryOff # since interaction with 3rd party modules
 	$(echo -ne "${cmd}") |
 	{	echo
@@ -616,7 +612,7 @@ playbackMenu () {
 playList () {
 	local pl
 	resetScreen "Play list"
-	print "I will list you all .m3u playlists under...\n\n"
+	print "I will list you all .m3u playlists under...\n"
 	while :; do
 		read -r -p "> Scanning directory: " -i "${PLAYLIST_DIR}" -e dir
 		if [ $? -ne 0 ]; then
@@ -687,6 +683,7 @@ print () { # line
 	echo -ne " ${1}" # create one space margin
 }
 
+# TODO highlights
 printFullKeys () {
 	resetScreen "${PLAYER} Controls"
 	echo -e "$(horizon 6) Track $(horizon 15)"
@@ -723,7 +720,7 @@ printLocalKeys () {
 }
 
 printLowerBar () { # txt
-	echo -ne "${KEYS}${1}\e[0m"
+	echo -ne "${KEY_COLOR}${1}\e[0m"
 }
 
 printSettings () {
@@ -740,7 +737,7 @@ printStreamKeys () {
 }
 
 printUpperBar () { # txt
-	echo -ne "${LABELS}${1}\e[0m"
+	echo -ne "${LABEL_COLOR}${1}\e[0m"
 }
 
 removeCollection () {
@@ -827,20 +824,20 @@ setBars () { # nameOfColoring
 	[ $# -eq 1 ] || wrongArgCount "$@"
 	case "${1}" in
 		# TODO add more...
-		neon) setBars2 "${BLACK}\e[48;5;46m" "${BLACK}\e[48;5;226m" ;;
-		peasoup) setBars2 "${WHITE}${GREEN_BG1}" "${DARK}${UGLY_BG}" ;;
-		*)	[ "${1}" = ice ] || warn "Tried to set unknown coloring '${1}'"
-			setBars2 "${WHITE}${BLUE_BG2}" "${BLUE}${WBG}" # ice is default
+		bee) setBarColors "\e[93m" "${BLACK_BG}" "${BLACK}" "\e[103m" ;;
+		c64) setBarColors "\e[38;5;75m" "\e[48;5;4m" "\e[38;5;4m" "\e[48;5;75m" ;;
+		crown) setBarColors "\e[38;5;220m" "\e[48;5;1m" "${RED}" "\e[48;5;220m" ;;
+		neon) setBarColors "${BLACK}" "\e[48;5;46m" "\e[38;5;201m" "\e[48;5;226m" ;;
+		*)	[ "${1}" = forest ] || warn "Tried to set unknown coloring '${1}'"
+			setBarColors "${WHITE}" "\e[42m" "\e[90m" "\e[48;5;10m" # default
 			;;
 	esac
 }
 
-setBars2 () { # fgBgLabels fgBgKeys
-	[ $# -eq 2 ] || wrongArgCount "$@"
-	# hasText "${1}" && invalidArg "${1}"
-	# hasText "${2}" && invalidArg "${2}"
-	LABELS="${1}"
-	KEYS="${2}"
+setBarColors () { # fgLabels bgLabels fgKeys bgKeys
+	[ $# -eq 4 ] || wrongArgCount "$@"
+	LABEL_COLOR="${1}${2}"
+	KEY_COLOR="${3}${4}"
 }
 
 showColors () {
@@ -863,7 +860,7 @@ start () { # args...
 	plc=true; recent=false
 	for arg in "$@"; do
 		case "${arg}" in
-			--chance-colors|--show-colors|--help|--license|--settings|--term) batch "${arg}" "$#" ;;
+			--colors*|--help|--license|--settings|--term) batch "${arg}" "$#" ;;
 			--log) LOG="./${APPLICATION}.log" ;;
 			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
@@ -987,11 +984,11 @@ usage () {
 	echo "Usage: bash ${0} [BATCH | {OPTIONS}]"
 	echo "        (no args)       starts the application"
 	echo "BATCH:"
-	echo "        --chance-colors change playback bar coloring"
+	echo "        --colors        show names of available playback bar colorings"
+	echo "        --colors=x      change playback bar coloring to x"
 	echo "        --help          show this information"
 	echo "        --license       show license information only"
 	echo "        --settings      show stored settings values"
-	echo "        --show-colors   show available playback bar colorings"
 	echo "        --term          show terminal type"
 	echo "OPTIONS:"
 	echo "        --log           log some operative information"
@@ -1047,7 +1044,7 @@ readonly RED="\e[1;91m"
 readonly YELLOW="\e[0;93m"
 readonly WHITE="\e[97m"
 ### Color bars
-declare -a -r COLORINGS=( ice neon peasoup )
+declare -a -r COLORINGS=( bee c64 crown forest neon )
 readonly WIB="${WHITE}${BLACK_BG}"
 ### Effects
 readonly BLINKI="\e[5m"
@@ -1070,7 +1067,7 @@ readonly PLAYING1="${WHITE}"
 readonly PLAYING2="${GREEN2}"
 readonly WARN="${YELLOW}" # failures, warnings
 ### Dynamic effects
-declare KEYS= LABELS= #=> post initialization
+declare KEY_COLOR= LABEL_COLOR= #=> post initialization
 ### Special chars
 readonly BGR="\u2261"
 readonly DASH="\u2500"
