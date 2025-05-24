@@ -825,10 +825,9 @@ setBars () { # nameOfColoring
 	[ $# -eq 1 ] || wrongArgCount "$@"
 	case "${1}" in
 		# TODO add more...
-		bee) setBarColors "\e[93m" "${BLACK_BG}" "${BLACK}" "\e[103m" ;;
 		c64) setBarColors "\e[38;5;75m" "\e[48;5;4m" "\e[38;5;4m" "\e[48;5;75m" ;;
 		crown) setBarColors "\e[38;5;220m" "\e[48;5;1m" "${RED}" "\e[48;5;220m" ;;
-		neon) setBarColors "${BLACK}" "\e[48;5;46m" "\e[38;5;201m" "\e[48;5;226m" ;;
+		neon) setBarColors "\e[38;5;201m" "\e[48;5;226m" "\e[38;5;21m" "\e[48;5;46m" ;;
 		*)	[ "${1}" = forest ] || warn "Tried to set unknown coloring '${1}'"
 			setBarColors "${WHITE}" "\e[42m" "\e[90m" "\e[48;5;10m" # default
 			;;
@@ -1045,7 +1044,7 @@ readonly RED="\e[1;91m"
 readonly YELLOW="\e[0;93m"
 readonly WHITE="\e[97m"
 ### Color bars
-declare -a -r COLORINGS=( bee c64 crown forest neon )
+declare -a -r COLORINGS=( c64 crown forest neon )
 readonly WIB="${WHITE}${BLACK_BG}"
 ### Effects
 readonly BLINKI="\e[5m"
