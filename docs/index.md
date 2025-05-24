@@ -77,4 +77,4 @@ You can change the active collection this way:
 
 ![play-stream](https://github.com/user-attachments/assets/cbffcbb7-355d-4e8f-afa0-989c1e6978f0)
 
-_The figure above shows tauplayer playing a radio stream in Linux Mint._
+_The picture above shows tauplayer playing a radio stream in Linux Mint._
