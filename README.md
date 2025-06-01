@@ -15,7 +15,7 @@ Latest Versions: [v0.5-beta](https://github.com/jarvenja/tauplayer/releases/tag/
 ### Installing
 
 1) Download the version of your choice above. 
-2) If you haven't made it before its recommended to extract the package your _home directory_ and then rename that directory with version name into generic _$HOME/tauplayer_.
+2) If you haven't made it before its recommended to extract the package into your _home directory_ and then rename that directory with version name into generic _$HOME/tauplayer_.
 
 You can now execute the program. For now on, you can update it to the latest **development version** just by executing the _updater.sh_.
 
