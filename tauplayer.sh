@@ -536,7 +536,7 @@ play () { # [streamName] url
 		[ "${SHUFFLE}" == on ] && playback+=(-shuffle)
 		keys="printLocalKeys"
 		label=""
-		sign=$(blink "${PLAYING2}[>]")
+		sign=$(blink "${PLAYING2}${PLAY_SIGN}")
 		title="${PLAYLIST}"
 		RECENT_NAME="${PLAYLIST}"
 		playback+=(-playlist)
@@ -549,12 +549,13 @@ play () { # [streamName] url
 		title="[${COLLECTION}]"
 		RECENT_NAME="${1}"
 	fi
+	log "> Playing ${2}"
 	RECENT_URL="${2}"
 	cmd="${PLAYER} ${PLAY_PARAMS} ${playback[*]} ${2}"
-	# log "${cmd}"
 	tryOff # since interaction with 3rd party modules
 	$(echo -ne "${cmd}") |
 	{	echo
+		echo -ne "\e[?25l" # hide cursor
 		mp3floats=false
 		prev=""
 		while IFS= read -r line; do
@@ -570,9 +571,8 @@ play () { # [streamName] url
 						(${keys})
 						echo ; echo -e " ${PLAYING1}${sign}  ${label} \e[0m${PLAYING2}${2} "
 						;;
-					'') ;;
-					*"="*|*"audio codec"*|*AO:*|*AUDIO:*|*"ICY Info:"*|*libav*|*Video:*)
-						[ "${MODULE_INFO}" == on ] && print "${line}"
+					*"="*|*"audio codec"*|*AO:*|*AUDIO:*|*"Audio only"*|*Connecting*|*"ICY Info:"*|*libav*|*Resolving*|*Starting*|*Video:*)
+						log "${line}"
 						;;
 					*)	if [ "${line}" == "${prev}" ]; then
 							echo -ne "${WARN}|${NORMAL}"
@@ -829,7 +829,7 @@ setBars () { # nameOfColoring
 		crown) setBarColors "\e[38;5;220m" "\e[48;5;1m" "${RED}" "\e[48;5;220m" ;;
 		neon) setBarColors "\e[38;5;201m" "\e[48;5;226m" "\e[38;5;21m" "\e[48;5;46m" ;;
 		*)	[ "${1}" = forest ] || warn "Tried to set unknown coloring '${1}'"
-			setBarColors "${WHITE}" "\e[42m" "\e[90m" "\e[48;5;10m" # default
+			setBarColors "${WHITE}" "\e[42m" "\e[90m" "\e[48;5;10m" # set default
 			;;
 	esac
 }
@@ -861,7 +861,7 @@ start () { # args...
 	for arg in "$@"; do
 		case "${arg}" in
 			--colors*|--help|--license|--settings|--term) batch "${arg}" "$#" ;;
-			--log) LOG="./${APPLICATION}.log" ;;
+			--no-log) LOG="" ;;
 			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
 			--reset) removeSettings ;;
@@ -878,6 +878,10 @@ start () { # args...
 	PLAYLIST_CACHE="${plc}"
 	[ "${recent}" == true ] && resume
 	mainMenu
+}
+
+streamActionMenu () { # stream
+	echo
 }
 
 streamMenu () { # action
@@ -991,7 +995,7 @@ usage () {
 	echo "        --settings      show stored settings values"
 	echo "        --term          show terminal type"
 	echo "OPTIONS:"
-	echo "        --log           log some operative information"
+	echo "        --no-log        disable logging operative information"
 	echo "        --no-pl-cache   disable cache when playing lists"
 	echo "        --recent        continue recently played list or stream"
 	echo "        --reset         clears all stored settings and sets default"
@@ -1078,6 +1082,7 @@ readonly COLLECTION1="favorites"
 readonly FILENAME_CHAR="[a-zA-Z0-9\-]"
 readonly GG="https://www.google.com"
 readonly PLAYLIST="Playlist"
+readonly PLAY_SIGN="PLAY >"
 ### Settings
 readonly PLAYER="mplayer"
 readonly PLAY_PARAMS="-msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg"
@@ -1085,7 +1090,8 @@ readonly SETTINGS="./${APPLICATION}.cvs"
 declare -i -r CACHE_MIN=80
 declare -i -r CACHE_SIZE=16384
 declare -i -r COLORING_MAX=7
-declare BLINK= COLLECTION= COLORING= LOG= MOD_INFO= PLAYLIST_CACHE= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= SHUFFLE= #=> post initialization
+declare LOG="./${APPLICATION}.log"
+declare BLINK= COLLECTION= COLORING= MOD_INFO= PLAYLIST_CACHE= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= SHUFFLE= #=> post initialization
 ### Error policy
 set -uo pipefail
 tryOn
