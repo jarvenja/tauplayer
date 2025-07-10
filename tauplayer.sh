@@ -11,13 +11,13 @@
 addValidStream () { # validName validUrl
 	local err file
 	[ $# -ne 2 ] && invalidArg "${1} MUST be run alone!"
-	file=$(getCollectionPath)
+	file=$(getStreamGroupPath "${STREAM_GROUP}")
 	$(echo "${1},${2}" >> "${file}") && sort -o "${file}"{,}
 }
 
-archive () { # collection
+archive () { # streamGroup
 	local bak f
-	f=$(getCollectionPath "${1}")
+	f=$(getStreamGroupPath "${1}")
 	bak=$(getBackupPath "${1}")
 	if mv -v "${f}" "${bak}" >/dev/null; then
 		report "${1} was archived"
@@ -29,10 +29,12 @@ archive () { # collection
 batch () { # arg argc
 	[ "${2}" -ne 1 ] && fatal "${1} MUST be run alone!"
 	case "${1}" in
+		--codex) showCodexInfo ;;
 		--colors) showColors ;;
 		--colors=*) changeColors "${1:9}" ;;
 		--help) usage ;;
 		--license) viewLicense ;;
+		--log) showLog ;;
 		--settings) loadSettings "${SETTINGS}" ; printSettings ;;
 		--term) echo "Your terminal type is '${TERM}' which may affect to see correct colors or characters." ;;
 		*) invalidArg "${1}" ;;
@@ -41,17 +43,12 @@ batch () { # arg argc
 	exit 0
 }
 
-blink () { # text
-	[ $# -eq 1 ] || wrongArgCount "$@"
-	[ "${BLINK}" == on ] && echo "${BLINKI}${1}${BLINKO}" || echo "${1}"
-}
-
 catch () {
 	local code cmd lineno
 	code=$?
 	cmd="${BASH_COMMAND}"
 	lineno="${BASH_LINENO}"
-	printf "${WARN}The line %d: %s\nreturned %d\n${NORMAL}" "${lineno}" "${cmd}" "${code}"
+	printf "${WARN}The line %d: %s\nreturned %d\n" "${lineno}" "${cmd}" "${code}"
 	# FixMe: Printing multiple lines...
 }
 
@@ -73,49 +70,14 @@ clearMsg () {
 	MSG=""
 }
 
-collectionMenu () { # action
-	local c line
-	local -i dlg
-	local -a entries
-	while read -r line; do
-		c="${line##*/}"
-		c="${c%.cvs}"
-		[ "${c}" == "${COLLECTION}" ] || entries+=("${c}" "")
-	done < <(find "${COLLECTION_DIR}" -name "*.cvs" | sort)
-    [ "${#entries[@]}" -eq 0 ] && fatal "No collections found in ${COLLECTION_DIR}."
-	clearMsg
-	tput civis || terror
-	tryOff
-	c=$(dialog \
-		--stdout \
- 		--backtitle "$(getTitle)" \
- 		--title " ${1} Collection " \
- 		--clear \
-		--cancel-label "Cancel" \
-		--ok-label "Select" \
-		--menu "\n${MSG}" 0 0 16 \
-		"${entries[@]}"
-	)
-	dlg=$?
-	tryOn
-	tput cnorm || terror
-	if [ "${dlg}" -eq "${DLG_OK}" ]; then
-		case "${1}" in
-			Change) COLLECTION="${c}" ;;
-			Remove) archive "${c}" ;;
-			*) invalidArg "${1}" ;;
-		esac
-	fi
-}
-
-createCollection () { # validName
+createStreamGroup () { # validName
 	local f
-	f=$(getCollectionPath "${1}")
+	f=$(getStreamGroupPath "${1}")
 	if [ -f "${f}" ]; then
 		fatal "File ${f} already exists!"
 	else
 		touch "${f}"
-		[ $? -ne 0 ] && fatal "Couldn\'t create collection ${1}!"
+		[ $? -ne 0 ] && fatal "Couldn\'t create stream group ${1}!"
 	fi
 }
 
@@ -142,7 +104,7 @@ ensureCommands () { # cmds...
 	cmds=$(getMissingCommands "$@")
 	if [ -n "${cmds}" ]; then
 		intro
-		echo -ne "\n${APPLICATION} requires the following commands to operate: ${BAD}${cmds}${NORMAL}\n"
+		echo -ne "\n${APPLICATION} requires the following commands to operate: ${BAD}${cmds}\e[0m\n"
 		echo "Please install missing dependencies and try again."
 		echo "=> sudo apt update && sudo apt-get install ${cmds}"
 		fatal "Missing dependencies"
@@ -151,19 +113,22 @@ ensureCommands () { # cmds...
 
 ensureConfig () {
 	[ -f "${DIALOGRC}" ] || fatal ".dialogrc file not found in directory!"
-	[ -d "${COLLECTION_DIR}" ] || mkdir "${COLLECTION_DIR}"
+	ensureDir "${LOG_DIR}"
+	ensureDir "${STREAM_GROUP_DIR}"
+	BLINK=true
 	if [ -f "${SETTINGS}" ]; then
 		loadSettings "${SETTINGS}"
-	else #=> ensure tauplayer.cvs and ./collections/favorites.cvs
-		touch $(getCollectionPath "${COLLECTION1}")
-		COLLECTION="${COLLECTION1}"
+	else #=> ensure tauplayer.cvs and ./streams/favorites.cvs
+		touch $(getStreamGroupPath "${STREAM_GROUP1}")
 		PLAYLIST_DIR="${HOME}"
+		STREAM_GROUP="${STREAM_GROUP1}"
 		saveSettings
 	fi
 }
 
 ensureDir () { # dir
-	[ -d "${1}" ] || fatal "Invalid directory ${1}!"
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	[ -d "${1}" ] || mkdir "${1}"
 }
 
 ensureFile () { # file
@@ -173,33 +138,29 @@ ensureFile () { # file
 ensureInternet () {
 	local code
 	code=$(getHttpResponseStatus "${GG}")
-	[ "${code}" -eq 200 ] || fatal "No connection available to reach ${GG}!"
+	[ "${code}" = 200 ] || fatal "No connection available to reach ${GG}!"
 }
 
 error () { # msg
-	echo -ne " ${WARN}Error: ${1}${NORMAL}" >&2
+	echo -ne " ${WARN}Error: ${1}$\e[0m" >&2
 }
 
 fail () { # reason
-	echo -ne " ${WARN}[${1}]${NORMAL}\n"
+	echo -ne " ${WARN}[${1}]\e[0m\n"
 	# inputKey
 }
 
 fatal () { # msg
-	echo -e "${BAD}Fatal Error: ${1}${NORMAL}" >&2
+	local msg
+	msg="Fatal Error: ${1}"
+	log "${msg}"
+	echo -e "${BAD}${msg}\e[0m" >&2
 	exit 1
 }
 
-handleDlgReturn () { # dlgReturnValue
-	case "${1}" in
- 		"${DLG_CANCEL}"|"${DLG_ESC}") ;; # normally ignored
- 		 *) warn "Unhandled dialog return code ${1} in ${FUNCNAME[1]}" ;;
-	esac
-}
-
-getBackupPath () { # collectionName
+getBackupPath () { # streamGroupName
 	local initial path
-	initial="${COLLECTION_DIR}/${1}"
+	initial="${STREAM_GROUP_DIR}/${1}"
 	path="${initial}.bak"
 	for ((i=1; -f "${path}" ;i++)); do
 		path="${initial}-${i}.bak"
@@ -207,14 +168,25 @@ getBackupPath () { # collectionName
 	echo "${path}"
 }
 
-getCollectionPath () { # [collectionName]
-	echo "${COLLECTION_DIR}/${1:-${COLLECTION}}.cvs"
-}
-
 getDistributor () {
 	local did
 	did=$(lsb_release -i)
 	echo "${did:16}"
+}
+
+getHttpResponse () { # url
+	local check code prefix reason sign
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	resetScreen
+	echo -ne "Testing..."
+	code=$(getHttpResponseStatus "${1}")
+	case "${code}" in
+		200|302|400|404|405) check=x ;;
+		*) check=- ;;
+	esac
+	reason=$(getHttpResponseName "${code}")
+	log "[${check}] ${code} ${reason} <- ${1}"
+	report "${code} ${reason} [${check}]"
 }
 
 # Based on https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses
@@ -290,12 +262,13 @@ getHttpResponseName () { # code
 getHttpResponseStatus () { # url
 	local code
 	code=$(curl -o /dev/null --silent --head --write-out "%{http_code}\n" "${1}")
+	# code=$(curl -o /dev/null --silent --head --write-out "%{http_code}\n" "${1}")
 	echo "${code}"
 }
 
 getKeyValue () { # key
 	local f value
-	f=$(getCollectionPath "${COLLECTION}")
+	f=$(getStreamGroupPath "${STREAM_GROUP}")
 	ensureFile "${f}"
 	value=$(grep "^${1}," "${f}" | cut -d"," -f2-)
 	echo "${value}"
@@ -317,13 +290,21 @@ getShellType () {
 	[ $? -eq 0 ] && echo "${x##* }"
 }
 
-getTitle () {
-	echo -ne "${PRODUCT} -=- [${COLLECTION}]"
+getStreamGroupPath () { # streamGroupName
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	echo "${STREAM_GROUP_DIR}/${1}.cvs"
+}
+
+handleDlgReturn () { # dlgReturnValue
+	case "${1}" in
+ 		"${DLG_CANCEL}"|"${DLG_ESC}") ;; # normally ignored
+ 		 *) warn "Unhandled dialog return code ${1} in ${FUNCNAME[1]}" ;;
+	esac
 }
 
 hasKey () { # key
 	local f match
-	f=$(getCollectionPath "${COLLECTION}")
+	f=$(getStreamGroupPath "${STREAM_GROUP}")
 	ensureFile "${f}"
 	match=$(grep "^${1}," "${f}")
 	[ -n "${match}" ]
@@ -349,21 +330,44 @@ informWaiting () { # slowOperation
 	echo -ne "${1}..."
 }
 
+initCodexInfo () {
+	CODEX_RECORD=false
+	if [ ! -f "${CODEX_FILE}" ]; then
+		touch "${CODEX_FILE}" && CODEX_RECORD=true
+	fi
+}
+
 inputKey () {
-	echo; echo
+	echo -ne "${HIDE_CURSOR}\n\n"
 	print ">> Press a key to continue..."
 	read -rsn 1
 }
 
-inputNewCollection () {
+inputNewStream () {
+	local err name url
+	resetScreen "Add New Stream"
+	print "Type an unique name and URL or leave blank to cancel\n\n"
+	print "x ${STREAM_GROUP}: ${STREAM_GROUP}\n"
+	name=$(inputValidStreamName)
+	[ -z "${name}" ] && return
+	url=$(inputValidStreamUrl)
+	[ -z "${url}" ] && return
+	$(addValidStream "${name}" "${url}")
+	if [ $? -eq 0 ]; then
+		inform "Stream added.\n"
+		log "Added '${name},${url}' into ${STREAM_GROUP}"
+	fi
+}
+
+inputNewStreamGroup () {
 	local file key name
 	key="?"; name=""
-	resetScreen "New Collection"
-	print "Type an unique name for collection.\n"
+	resetScreen "New Stream Group"
+	print "Type an unique name for stream group.\n"
 	print "- Only letters, numbers and dash (-) are allowed.\n"
 	print "- Use left arrow [<-] to remove last letter.\n"
 	print "- Leave it empty to cancel\n\n"
-	print "> Collection Name: "
+	print "> Stream Group Name: "
 	IFS=
 	while [ "${key}" != '' ]; do
 		read -rsn 1 key
@@ -382,37 +386,21 @@ inputNewCollection () {
 	done
 	unset IFS
 	[ -z "${name}" ] && return
-	file=$(getCollectionPath "${name}")
+	file=$(getStreamGroupPath "${name}")
 	if [ -f "${file}" ]; then
 		fail "Already exists"
 		inputKey
 	else
-		createCollection "${name}"
-		COLLECTION="${name}"
-		report "New collection changed"
-	fi
-}
-
-inputNewStream () {
-	local err name url
-	resetScreen "Add New Stream"
-	print "Type an unique name and URL or leave blank to cancel\n\n"
-	print "x Collection: ${COLLECTION}\n"
-	name=$(inputValidStreamName)
-	[ -z "${name}" ] && return
-	url=$(inputValidStreamUrl)
-	[ -z "${url}" ] && return
-	$(addValidStream "${name}" "${url}")
-	if [ $? -eq 0 ]; then
-		inform "Stream added.\n"
-		log "Added '${name},${url}' into ${COLLECTION}"
+		createStreamGroup "${name}"
+		STREAM_GROUP="${name}"
+		report "New stream group changed"
 	fi
 }
 
 inputValidStreamName () { # [old]
 	local url
 	while :; do
-		read -r -p " > Name: " -i "${1:-}" -e name
+		read -r -p "  Name: " -i "${1:-}" -e name
 		[ -z "${name}" ] && break # cancel by user
 		# TODO add more invalid characters
 		if [[ "${name}" == *,* ]]; then fail "Invalid characters"
@@ -427,7 +415,7 @@ inputValidStreamName () { # [old]
 }
 
 inputValidStreamUrl () { # [old]
-	read -r -p "  > URL: " -i "${1:-}" -e url
+	read -r -p "   URL: " -i "${1:-}" -e url
 	# TODO check URL
 	[ -z "{url}" ] || echo "${url}"
 }
@@ -441,23 +429,21 @@ invalidArg () { # arg
 }
 
 loadSettings () { # [settingsFile]
-	local collection file pld
+	local file pld streamGroup
 	[ $# -eq 1 ] || wrongArgCount "$@"
-	IFS=, read COLORING pld collection RECENT_NAME RECENT_URL BLINK MODULE_INFO SHUFFLE < "${1}"
+	IFS=, read COLORING pld streamGroup RECENT_NAME RECENT_URL SHUFFLE < "${1}"
 	unset IFS
 	[ -d "${pld}" ] && PLAYLIST_DIR="${pld}" || PLAYLIST_DIR="${HOME}"
-	# ensure COLLECTION..
-	COLLECTION="${COLLECTION1}"
-	if [[ -n "${collection}" ]]; then
-		file=$(getCollectionPath "${collection}")
-		[ -f "${file}" ] && COLLECTION="${collection}"
+	# ensure there is stream group..
+	STREAM_GROUP="${STREAM_GROUP1}"
+	if [[ -n "${streamGroup}" ]]; then
+		file=$(getStreamGroupPath "${streamGroup}")
+		[ -f "${file}" ] && STREAM_GROUP="${streamGroup}"
 	fi
 	# set coloring dependent values..
 	[ -z "${COLORING}" ] || [ "${#COLORING}" -gt "${COLORING_MAX}" ] && resetColoring
 	setBars "${COLORING}" || true
 	# ensure playback preferences..
-	check "${BLINK}" || BLINK=off
-	check "${MOD_INFO}" || MOD_INFO=off
 	check "${SHUFFLE}" || SHUFFLE=off
 }
 
@@ -471,29 +457,23 @@ mainMenu () {
 	local -i dlg
 	while :; do
 		menu=( \
-			"v" "Audio Settings..." \
-			"k" "View Player Controls..." \
-			"c" "Change Active Collection..." \
-			"n" "Create New Collection..." \
-			"r" "Remove Collection from list..." \
-			"p" "Playback preferences..." \
-			"l" "Play list..." \
-			"s"	"Play Radio Stream..." \
-			"a" "Add New Stream..." \
-			"u" "Update Stream..." \
-			"e" "Remove Stream..." \
-			"i" "View license..."
+			"a" "Audio Settings..." \
+			"c" "Playback Controls..." \
+			# "p" "Playback preferences..." \
+			"l" "Play lists..." \
+			"r" "Radio Streams..." \
+			"v" "View license..."
 		)
 		tput civis || terror
 		tryOff
 		choice=$(dialog \
 			--stdout \
-			--backtitle "$(getTitle)" \
+			--backtitle "${TITLE_BAR}" \
 			--title "" \
 			--clear \
 			--cancel-label "Exit" \
 			--ok-label "Select" \
-			--menu "${MSG}" 0 44 16 \
+			--menu "${MSG}" 0 40 "${MIN_HEIGHT}" \
  			"${menu[@]}"
 		)
     	dlg=$?
@@ -502,18 +482,12 @@ mainMenu () {
 		clearMsg
 		if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
 			case "${choice}" in
-		    	v) alsamixer ;;
-				k) printFullKeys ;;
-				c) collectionMenu "Change" ;;
-				n) inputNewCollection || true ;;
-				r) collectionMenu "Remove" ;;
-				p) playbackMenu || true ;;
-				l) playList ;;
-				s) streamMenu "Listen" || true ;;
-				a) inputNewStream || true ;;
-				u) streamMenu "Update" || true ;;
-				e) streamMenu "Remove" || true ;;
-				i) viewLicense || true ;;
+		    	a) alsamixer ;;
+				c) printPlaybackControls ;;
+				# p) playbackMenu || true ;;
+				l) playList || true ;;
+				r) radioStreamsMenu || true ;;
+				v) viewLicense || true ;;
 				*) invalidArg "${choice}" ;;
 			esac
 		else
@@ -527,61 +501,133 @@ now () {
 	echo $(date '+%a %d-%m-%Y %T')
 }
 
+parseIcyInfo () { # icyInfoLine
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	IFS=';' read title url <<< "${1:23}" # cuts "ICY Info: StreamTitle='"
+	unset IFS
+	STREAM_TITLE="${title::-1}"
+	if [ -z "${url}" ]; then
+		STREAM_URL="${ICY_PLACEHOLDER}"
+	else
+		url="${url::-1}"
+		url="${url:11}" # cuts "StreamUrl=\'"
+		if [[ "${url}" != "${STREAM_URL}" ]]; then # log only changes
+			log "@ ${url}"
+			STREAM_URL="${url}"
+		fi
+	fi
+	log "> ${STREAM_TITLE}"
+}
+
 play () { # [streamName] url
-	local cmd keys label line mp3floats prev sign title
-	local -a playback
-	playback=()
+	local alsa audio cmd good line prev refresh video
+	local -A events
+	local -a lines playback
+	for ((i=12;i<=22;++i)); do lines[${i}]=""; done
+	playback=()	
+	alsa=true
+	good=true
+	refresh=true
+	prev=""
 	if [ -z "${1}" ]; then # play list
 		[ "${PLAYLIST_CACHE}" == true ] && playback+=(-cache "${CACHE_SIZE}" -cache-min "${CACHE_MIN}")
 		[ "${SHUFFLE}" == on ] && playback+=(-shuffle)
-		keys="printLocalKeys"
-		label=""
-		sign=$(blink "${PLAYING2}${PLAY_SIGN}")
-		title="${PLAYLIST}"
-		RECENT_NAME="${PLAYLIST}"
 		playback+=(-playlist)
+		RECENT_NAME="${PLAYLIST_KEY}"
 	else
-		keys="printStreamKeys"
-		label="${1}\n         "
-		sign=$(blink "((")
-		sign+=" A "
-		sign+=$(blink "))")
-		title="[${COLLECTION}]"
 		RECENT_NAME="${1}"
 	fi
-	log "> Playing ${2}"
 	RECENT_URL="${2}"
-	cmd="${PLAYER} ${PLAY_PARAMS} ${playback[*]} ${2}"
+	STREAM_TITLE="${ICY_PLACEHOLDER}"
+	STREAM_URL="${ICY_PLACEHOLDER}"
+	cmd="${PLAYER_CMD} ${PLAY_PARAMS} ${playback[*]} ${2}"
 	tryOff # since interaction with 3rd party modules
 	$(echo -ne "${cmd}") |
-	{	echo
-		echo -ne "\e[?25l" # hide cursor
-		mp3floats=false
-		prev=""
+	{	echo -ne "${HIDE_CURSOR}"
+		log "Started playback session for ${2}"
 		while IFS= read -r line; do
-			if [[ "${line}" == *"[mp3float"* ]]; then
-				if [ "${mp3floats}" == false ]; then
-					error "Bad audio quality (mp3float)!"
-					mp3floats=true
-				fi
-			else
-				case "${line}" in
-					Playing*) # new screen for each...
-						resetScreen "${title}"
-						(${keys})
-						echo ; echo -e " ${PLAYING1}${sign}  ${label} \e[0m${PLAYING2}${2} "
-						;;
-					*"="*|*"audio codec"*|*AO:*|*AUDIO:*|*"Audio only"*|*Connecting*|*"ICY Info:"*|*libav*|*Resolving*|*Starting*|*Video:*)
+			line=$(unformat "${line}")
+			case "${line}" in
+				"Audio only"*) audio=true ;;
+				" Album:"*) lines[12]="${COLUMN1}${line/:/      ${COLUMN2}}" ;;
+				" Artist:"*) lines[13]="${COLUMN1}${line/:/     ${COLUMN2}}" ;;
+				" Comment:"*) lines[14]="${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				" Genre:"*) lines[15]="${COLUMN1}${line/:/      ${COLUMN2}}" ;;
+				" Title:"*) lines[16]="${COLUMN1}${line/:/      ${COLUMN2}}" ;;
+				" Year:"*) lines[17]="${COLUMN1}${line/:/       ${COLUMN2}}" ;;
+				"Name   :"*) lines[12]=" ${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				"Genre  :"*) lines[13]=" ${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				"Public :"*) lines[14]=" ${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				"Website:"*) lines[15]=" ${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				"Bitrate:"*) lines[16]=" ${COLUMN1}${line/:/    ${COLUMN2}}" ;;
+				"Cache fill:"*) CACHE_FILL="${line}" ;;
+				"Cache size"*) CACHE_SIZE_MSG="${line}" ;;
+				"Clip Info:"*) ;;
+				Connecting*|Resolving*) log "${line}" ;;
+				"ICY Info:"*) parseIcyInfo "${line}" ;;
+				MPlayer*) PLAYER_VER="${line}" ;;
+				Playing*) refresh=true ;;
+				"Starting playback...") ;;
+				"Video: no video"*) video=false ;;
+				*Volume:*) lines[20]=$(printScale "${line:7}") ;;
+				AO:*|AUDIO:*|libav*|Opening*|Selected*|Trying*|=*)
+					if [ "${CODEX_RECORD}" == true ]; then
+						echo "${line}" >> "${CODEX_FILE}"
+						case "${line}" in AO:*)
+							log "Finished recording ${CODEX_FILE}"
+							CODEX_RECORD=false
+							;;
+						esac
+					fi
+					;;
+				"[AO_ALSA]"*|"Cache empty"*)
+					if [ "${events[${line}]}" ]; then : # skip
+					else
+						events["${line}"]=1
 						log "${line}"
-						;;
-					*)	if [ "${line}" == "${prev}" ]; then
-							echo -ne "${WARN}|${NORMAL}"
-						else
-							echo -ne "\n ${line} "
-							prev="${line}"
-						fi
-						;;
-				esac
+						echo -ne "${YELLOW}${line}\e[0m\n"
+					fi
+					;;
+				"[mp3floats"*)
+					log "${line}"
+					if [[ "${good}" == true ]]; then
+						good=false
+						echo -ne "${YELLOW}[Quality Problems]\e[0m\n"
+					fi
+					;;
+				*)	#if [[ ${line} =~ Volume: ]]; then
+					#	lines[20]=$(printScale "${line:7}")
+					#else 
+						echo -ne "${line}"	
+					#fi
+
+					#	echo -ne "${line}\n"
+					#if [ "${line}" != "${prev}" ]; then
+					#	prev="${line}"
+					#	echo -ne "${line}\n"
+					#fi
+					;;
+			esac
+			if [ "${refresh}" == true ]; then
+				clear 
+				echo -ne "${GREEN2}${TITLE_BAR}\n"
+				horizon
+				echo ; echo
+				if [ "${RECENT_NAME}" == "${PLAYLIST_KEY}" ]; then
+					printLocalKeys
+					lines[7]=" ${COLUMN1}Playlist    ${COLUMN2}${RECENT_URL}"
+				else # stream
+					printStreamKeys
+					lines[7]=" ${COLUMN1}Group       ${COLUMN2}${STREAM_GROUP}"
+					lines[8]=" ${COLUMN1}Key         ${COLUMN2}${RECENT_NAME}"
+					lines[9]=" ${COLUMN1}URL         ${COLUMN2}${RECENT_URL}"
+					lines[10]=" ${COLUMN1}StrTitle    ${COLUMN2}${STREAM_TITLE}"
+					lines[11]=" ${COLUMN1}StreamURL   ${COLUMN2}${STREAM_URL}"
+				fi
+				echo
+				for i in "${lines[@]}"; do
+					echo -ne "${i}\n"
+				done
 			fi
 	  	done
 	}
@@ -594,14 +640,12 @@ playbackMenu () {
 	tput civis || terror
 	checks=$(dialog \
 		--stdout \
-		--backtitle "$(getTitle)" \
+		--backtitle "${TITLE_BAR}" \
 		--title " Playback Preferences " \
 		--clear \
 		--ok-label "Update" \
 		--checklist "\nUse arrow keys and space bar" 0 34 6 \
-		"${BLINK_ID}" "Blink playing icon" "${BLINK}" \
 		"${SHUFFLE_ID}" "Shuffle playlist" "${SHUFFLE}" \
-		"${MOD_INFO_ID}" "Module Info" "${MOD_INFO}" \
 		--output-fd 1
 	)
 	dlg=$?
@@ -650,9 +694,8 @@ playlistMenu () {
 		file=$(dialog \
 			--stdout \
 			--clear \
-			--backtitle "$(getTitle)" \
+			--backtitle "${TITLE_BAR}" \
 			--title " Playlists found " \
-			--cancel-label "Cancel" \
 			--ok-label "Play" \
 			--menu "\n${MSG}" 0 0 16 \
  			"${entries[@]}"
@@ -664,51 +707,11 @@ playlistMenu () {
 	fi
 }
 
-playStream () { # name url
-	local code
-	[ "$#" -eq 2 ] || wrongArgCount "$@"
-	resetScreen "Pre-check"
-	informWaiting "Loading"
-	code=$(getHttpResponseStatus "${2}")
-	case "${code}" in
-		200|302|400|404|405) play "${1}" "${2}" ;;
-		*) reportUnavailability "${1}" "${2}" "${code}" ;;
-	esac
-}
-
 # printf '%s|' "${array[@]}
 
 print () { # line
 	[ $# -eq 1 ] || wrongArgCount "$@"
-	echo -ne " ${1}" # create one space margin
-}
-
-# TODO highlights
-printFullKeys () {
-	resetScreen "${PLAYER} Controls"
-	echo -e "$(horizon 6) Track $(horizon 15)"
-    printKey "        Stop" "[Esc]"
-	printKey "       Pause" "P [Space]"
-	printKey "   Prev/Next" "< >"
-	printKey "      -/+10s" "<- ->"
-	printKey "     -/+1min" "[Up] [Down]"
- 	printKey "    -/+10min" "[Pg] [PgUp]"
-	echo -e "$(horizon 3) Playback Speed $(horizon 9)"
-	printKey "        100%" "[BkSp]"
-	printKey "         50%" "{"
-	printKey "      -/+10%" "[ ]"
-	printKey "          x2" "  }"
-	echo -e "$(horizon 5) Volume $(horizon 15)"
-	printKey "        Vol-" "9 /"
-	printKey "        Vol+" "0 *"
-	printKey "        Mute" "M"
-	printKey "     Balance" "( )"
-	echo -e "$(horizon 28)"
-	inputKey
-}
-
-printKey () { # function key
-	echo -e " ${1}  ${BOLD}${2}${NORMAL}"
+	echo -ne " ${GREEN2}${1}\e[0m\n" # create one space margin
 }
 
 printLocalKeys () {
@@ -723,9 +726,39 @@ printLowerBar () { # txt
 	echo -ne "${KEY_COLOR}${1}\e[0m"
 }
 
+printPlaybackControls () {
+	resetScreen
+	print "${GREEN1}Keys when playing local files through playlist:\n"
+	printLocalKeys
+	echo ; echo
+	print "${GREEN1}Keys when playing radio streams:\n"
+	printStreamKeys
+	echo ; echo
+	print "${GREEN1}Avoid pressing any other keys during playback.\n"
+	inputKey
+}
+
+printScale () { # infoLine
+	local -i bars
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	IFS=':' read label rest <<< "${1}"
+	IFS="%. " read percent bytes <<< "${rest}"
+	unset IFS
+	# log "|${label}|${percent}|${bytes}|"
+	# float=$((bc -l <<< "${percent}/2"))
+	# log "float=${float}"
+	# bars=${float%.*}
+	bars="$((${percent}/2))"
+	echo -ne "${GREEN2} ${label} "
+	for ((i=0; i<"${bars}"; i++)); do echo -ne '|'; done
+	echo -ne "${DARK_GRAY}"
+	for ((i="${bars}"; i<50; i++)); do echo -ne '|'; done
+	echo -ne " \e[39m"
+}
+
 printSettings () {
 	local -a vars
-	vars=(BLINK COLLECTION COLORING LOG MOD_INFO PLAYLIST_DIR RECENT_NAME RECENT_URL SHUFFLE)
+	vars=(COLORING PLAYLIST_DIR RECENT_NAME RECENT_URL SHUFFLE STREAM_GROUP)
 	for var in "${vars[@]}"; do
 		echo "${var}=${!var}"
 	done
@@ -740,10 +773,51 @@ printUpperBar () { # txt
 	echo -ne "${LABEL_COLOR}${1}\e[0m"
 }
 
-removeCollection () {
-	local c
-	c=$(collectionMenu "Remove")
-	[ -n "${c}" ] && archiveFile getCollectionPath "${c}"
+radioStreamsMenu () {
+	local choice
+	local -i dlg
+	local -a entries
+	while :; do
+		entries=( \
+			"s" "Select Stream..." \
+			"a" "Add Stream into Group..." \
+			"c" "Change Stream Group..." \
+			"n" "Create New Group..." \
+			"r" "Remove Group from list..."
+		)
+		tput civis || terror
+		tryOff
+		choice=$(dialog \
+			--stdout \
+	 		--backtitle "${TITLE_BAR}" \
+	 		--title " ${STREAM_GROUP} " \
+	 		--clear \
+			--ok-label "Select" \
+			--menu "\n${MSG}" 0 0 "${MIN_HEIGHT}" \
+			"${entries[@]}"
+		)
+		dlg=$?
+		tryOn
+		tput cnorm || terror
+		if [ "${dlg}" -eq "${DLG_OK}" ]; then
+			case "${choice}" in
+				s) streamSelectionMenu || true ;;
+				a) inputNewStream || true ;;
+				c) streamGroupMenu "Change" || true ;;
+				n) inputNewStreamGroup || true ;;
+				r) streamGroupMenu "Remove" || true ;;
+				*) invalidArg "${arg}" ;;
+			esac
+		else
+			handleDlgReturn "${dlg}"
+			break
+		fi
+	done
+}
+
+
+removeCodexInfo () {
+	rm "${CODEX_FILE}" && log "Codex info cleared."
 }
 
 removeKey () { # key value filepath
@@ -751,18 +825,24 @@ removeKey () { # key value filepath
 }
 
 removeSettings () {
-	rm "${SETTINGS}" && echo "Settings cleared."
+	rm "${SETTINGS}" && log "Settings cleared."
 }
 
 removeStream () { # name url
 	local file
-	file=$(getCollectionPath)
+	file=$(getStreamGroupPath "${STREAM_GROUP}")
 	$(sed -i "/${1}/d" "${file}")
 	if [ $? -eq 0 ]; then
 		report "Stream removed"
 	else
 		fatal "Failed ($?) to remove stream '${1}' with data '${2}'"
 	fi
+}
+
+removeStreamGroup () {
+	local c
+	c=$(streamGroupMenu "Remove")
+	[ -n "${c}" ] && archiveFile getStreamGroupPath "${c}"
 }
 
 replaceKeyValue () { # key value filepath
@@ -775,27 +855,14 @@ report () { # msg
 	MSG="-> ${1}"
 }
 
-reportUnavailability () { # streamName url code
-	local responseName
-	[ $# -eq 3 ] || wrongArgCount "$@"
-	resetScreen "Stream Not Available"
-	print "Pre-check failed with the following details:\n\n"
-	print "Type: Stream\n"
-	print "Name: ${1}\n"
-	print " URL: ${2}\n\n"
-	responseName=$(getHttpResponseName "${3}")
-	print "HTTP ->"
-	fail "${3} ${responseName}"
-	inputKey
-}
-
 resetColoring () {
 	local x
 	x=$(getDistributor)
 	case "${x}" in
 		# TODO add more
 		Linuxmint) x=rich ;;
-		Rasbian|Ubuntu) x=true ;;
+		Raspian) x=true ;;
+		Ubuntu) x=true ;;
 		*) warn "Background type were not specified for ${x}"; x=true ;;
 	esac
 	#=> map temporary x to colorings
@@ -804,21 +871,26 @@ resetColoring () {
 	COLORING="${x}"
 }
 
-resetScreen () { # header
-	[ $# -eq 1 ] || wrongArgCount "$@"
+resetScreen () {
 	clear
-	echo -ne "${NORMAL}> ${PRODUCT} -=- ${1}\n"
+	echo -ne "${GREEN2}${TITLE_BAR}\n"
 	horizon
-	echo; echo
+	echo ; echo	
 }
 
 resume () {
-	[ "${RECENT_NAME}" == "${PLAYLIST}" ] && play "" "${RECENT_URL}" || playStream "${RECENT_NAME}" "${RECENT_URL}"
+	[ "${RECENT_NAME}" == "${PLAYLIST}" ] && play "" "${RECENT_URL}" || play "${RECENT_NAME}" "${RECENT_URL}"
 }
 
 saveSettings () {
-	$(echo "${COLORING},${PLAYLIST_DIR},${COLLECTION},${RECENT_NAME},${RECENT_URL},${BLINK},${MOD_INFO},${SHUFFLE}" > "${SETTINGS}")
+	$(echo "${COLORING},${PLAYLIST_DIR},${STREAM_GROUP},${RECENT_NAME},${RECENT_URL},${SHUFFLE}" > "${SETTINGS}")
 	[ $? -eq 0 ] && echo "Settings saved."
+}
+
+setBarColors () { # fgLabels bgLabels fgKeys bgKeys
+	[ $# -eq 4 ] || wrongArgCount "$@"
+	LABEL_COLOR="${1}${2}"
+	KEY_COLOR="${3}${4}"
 }
 
 setBars () { # nameOfColoring
@@ -834,10 +906,8 @@ setBars () { # nameOfColoring
 	esac
 }
 
-setBarColors () { # fgLabels bgLabels fgKeys bgKeys
-	[ $# -eq 4 ] || wrongArgCount "$@"
-	LABEL_COLOR="${1}${2}"
-	KEY_COLOR="${3}${4}"
+showCodexInfo () {
+	[ -f "${CODEX_FILE}" ] && cat "${CODEX_FILE}" || echo "No codex info available. It will be recorded next time when you play something."
 }
 
 showColors () {
@@ -855,83 +925,170 @@ showColors () {
 	echo
 }
 
+showLog () {
+	cat "${LOG}"
+}
+
 start () { # args...
 	local plc recent
 	plc=true; recent=false
 	for arg in "$@"; do
 		case "${arg}" in
-			--colors*|--help|--license|--settings|--term) batch "${arg}" "$#" ;;
+			--codex|--colors*|--help|--license|--log|--settings|--term) batch "${arg}" "$#" ;;
 			--no-log) LOG="" ;;
 			--no-pl-cache) plc=false ;;
 			--recent) recent=true ;;
-			--reset) removeSettings ;;
+			--reset) removeCodexInfo && removeSettings ;;
 			*) invalidArg "${arg}" ;;
 		esac
 	done
 	# TUI session
 	log "*** ${USER} started TUI on $(now)"
 	ensureConfig
-	ensureCommands "curl" "dialog" "lsb_release" "${PLAYER}"
-	ensureInternet
+	ensureCommands "curl" "dialog" "lsb_release" "${PLAYER_CMD}"
+	# ensureInternet
 	trap die EXIT
+	initCodexInfo
 	clearMsg
 	PLAYLIST_CACHE="${plc}"
 	[ "${recent}" == true ] && resume
 	mainMenu
 }
 
-streamActionMenu () { # stream
-	echo
+streamActionMenu () { # streamName streamUrl
+	local available choice code listen name reason url
+	local -i dlg
+	local -a actions=()
+	[ $# -eq 2 ] || wrongArgCount "$@"
+	#listen="Listen"
+	#code=$(getHttpResponseStatus "${2}")
+	#case "${code}" in
+	#	200|302|400|404|405) available=false ;;
+	#	*) listen+=" (anyway)" ;;
+	# esac
+	# reason=$(getHttpResponseName "${code}")
+	# report "${code} ${reason}"
+	clearMsg
+	while :; do
+		tput civis || terror
+		tryOff
+		actions=( \
+			"l" "Listen" \
+			"g" "Get HTTP status" \
+			"e" "Edit details" \
+			"r" "Remove from group" \
+		)
+		choice=$(dialog \
+			--stdout \
+			--backtitle "${TITLE_BAR}" \
+			--title " ${1} " \
+			--clear \
+			--ok-label "Select" \
+			--menu "\n${MSG}" 0 0 "${MIN_HEIGHT}" \
+			"${actions[@]}"
+		)
+		dlg=$?
+	 	tryOn
+		tput cnorm || terror
+		clearMsg		
+		if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
+			case "${choice}" in
+				l) play "${1}" "${2}" || true ;;
+				g) getHttpResponse "${2}" || true ;;
+				e) updateStream "${1}" "${2}" || true ;;
+				r) removeStream "${1}" "${2}" ;;
+				*) invalidArg "${choice}" ;;
+			esac
+		else
+			handleDlgReturn "${dlg}"
+			break
+		fi
+	done
 }
 
-streamMenu () { # action
-	local c line name url
+streamGroupMenu () { # action
+	local group line
 	local -i dlg
-	local -i items
-	local -a streams=()
-	[ "${#1}" -eq 6 ] || fatal "Invalid action '${1}' in call!"
-	c=$(getCollectionPath)
-	while IFS=";" read -r line; do
-		name="${line%%,*}"
-		[ -n "${name}" ] && streams+=("${name}" "${line#$name,}")
-	done < "${c}"
-	items="${#streams[@]}"
- 	if [ "${items}" -eq 0 ]; then
-		inform "No Streams in collection."
-		return
-	fi
+	local -a entries
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	while read -r line; do
+		group="${line##*/}"
+		group="${group%.cvs}"
+		[ "${group}" == "${STREAM_GROUP}" ] || entries+=("${group}" "")
+		done < <(find "${STREAM_GROUP_DIR}" -name "*.cvs" | sort)
+    [ "${#entries[@]}" -eq 0 ] && fatal "No stream groups found in ${STREAM_GROUP_DIR}."
 	clearMsg
 	tput civis || terror
 	tryOff
-	name=$(dialog \
+	group=$(dialog \
 		--stdout \
-		--backtitle "$(getTitle)" \
-		--title " ${1} Stream " \
-		--clear \
-		--ok-label "${1}" \
-		--menu "\n${MSG}" 0 0 16 \
-		"${streams[@]}"
+ 		--backtitle "${TITLE_BAR}" \
+ 		--title " ${1} Stream Group " \
+ 		--clear \
+		--ok-label "Select" \
+		--menu "\n${MSG}" 0 0 "${MIN_HEIGHT}" \
+		"${entries[@]}"
 	)
 	dlg=$?
 	tryOn
 	tput cnorm || terror
-   	if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
-		# get url from array rather than file again
-		for ((i=0; i<items; i=i+2)); do
-			if [ "${streams[${i}]}" == "${name}" ]; then
-				url="${streams[++i]}"
-				break
-			fi
-		done
+	if [ "${dlg}" -eq "${DLG_OK}" ]; then
 		case "${1}" in
-			Listen) playStream "${name}" "${url}" ;;
-			Remove) removeStream "${name}" "${url}" ;;
-			Update) updateStream "${name}" "${url}" || true ;;
+			Change) STREAM_GROUP="${group}" ; report "Stream Group changed." ;;
+			Remove) archive "${group}" ;;
 			*) invalidArg "${1}" ;;
 		esac
 	else
 		handleDlgReturn "${dlg}"
 	fi
+}
+
+streamSelectionMenu () {
+	local name sgp url
+	local -i dlg
+	local -i items
+	local -a streams=()
+	sgp=$(getStreamGroupPath "${STREAM_GROUP}")
+	while IFS=";" read -r line; do
+		name="${line%%,*}"
+		[ -n "${name}" ] && streams+=("${name}" "${line#$name,}")
+	done < "${sgp}"
+	items="${#streams[@]}"
+ 	if [ "${items}" -eq 0 ]; then
+		report "No streams in group."
+		# FixMe!
+		return
+	fi
+	while :; do
+		clearMsg
+		tput civis || terror
+		tryOff
+		name=$(dialog \
+			--stdout \
+			--backtitle "${TITLE_BAR}" \
+			--title " ${STREAM_GROUP} " \
+			--clear \
+			--ok-label "Select" \
+			--menu "\n${MSG}" 0 0 0 \
+			"${streams[@]}"
+		)
+		dlg=$?
+		tryOn
+		tput cnorm || terror
+	   	if [[ "${dlg}" -eq "${DLG_OK}" ]]; then
+			# get url from array rather than file again
+			for ((i=0; i<items; i=i+2)); do
+				if [ "${streams[${i}]}" == "${name}" ]; then
+					url="${streams[++i]}"
+					break
+				fi
+			done
+			streamActionMenu "${name}" "${url}"
+		else
+			handleDlgReturn "${dlg}"
+			break
+		fi
+	done
 }
 
 terror () {
@@ -948,14 +1105,17 @@ tryOn () {
 	set -eE
 }
 
+unformat () { # formattedLine
+	[ $# -eq 1 ] || wrongArgCount "$@"
+	echo "${1}" | sed -r "s/[[:cntrl:]]\[([0-9]{1,3};)*[0-9]{1,3}m//g"	
+}
+
 updatePlaybackSettings () { # checks...
 	[ $# -eq 1 ] || wrongArgCount "$@"
-	BLINK=off; MOD_INFO=off; SHUFFLE=off
+	SHUFFLE=off
 	for x in ${1}; do
 		case "${x}" in
-			"${BLINK_ID}") BLINK=on ;;
 			"${SHUFFLE_ID}") SHUFFLE=on ;;
-			"${MOD_INFO_ID}") MOD_INFO=on ;;
 			*) warn "Invalid value ${x} in ${FUNCNAME[0]}" ;;
 		esac
 	done
@@ -966,12 +1126,12 @@ updateStream () { # name url
 	local err file name url
 	resetScreen "Update Stream"
 	print "Type an unique name and URL or leave blank to cancel\n\n"
-	print "x Collection: ${COLLECTION}\n"
+	print "Group: ${STREAM_GROUP}"
 	name=$(inputValidStreamName "${1}")
 	[ -z "${name}" ] && return
 	url=$(inputValidStreamUrl "${2}")
 	[ -z "${url} " ] && return
-	file=$(getCollectionPath)
+	file=$(getStreamGroupPath "${STREAM_GROUP}")
 	err=$(sed -i "s|^${1},${2}|${name},${url}|" "${file}" > /dev/null)
 	case $? in
 		0)	report "Stream updated" ;;
@@ -988,10 +1148,12 @@ usage () {
 	echo "Usage: bash ${0} [BATCH | {OPTIONS}]"
 	echo "        (no args)       starts the application"
 	echo "BATCH:"
+	echo "        --codex         show codecs info"
 	echo "        --colors        show names of available playback bar colorings"
-	echo "        --colors=x      change playback bar coloring to x"
+	echo "        --colors=<name> change playback bar coloring by name"
 	echo "        --help          show this information"
 	echo "        --license       show license information only"
+	echo "        --log           show logged information"
 	echo "        --settings      show stored settings values"
 	echo "        --term          show terminal type"
 	echo "OPTIONS:"
@@ -1023,32 +1185,30 @@ wrongArgCount () { # args...
 
 ### App info
 readonly APPLICATION="${0::-3}"
-readonly VERSION="v0.5 (beta)"
-readonly COPYRIGHT="Copyright (c) 2025 Janne Järvenpää <jarvenja@gmail.com>"
+readonly VERSION="v0.6 (beta)"
+readonly COPYRIGHT="Copyright (c) 2025 <jarvenja@gmail.com>"
 readonly PRODUCT_NAME="tau Player"
 readonly PRODUCT="${PRODUCT_NAME} ${VERSION}"
 ### BG Colors
 readonly BLACK_BG="\e[40m"
-readonly BLOODY_BG="\e[48;5;1m"
 readonly BLUE_BG="\e[44m"
 readonly BLUE_BG2="\e[48;5;4m"
-readonly DARK="\e[38;5;235m"
+#readonly DARK="\e[38;5;235m"
 readonly GREEN_BG1="\e[42m"
 readonly GREEN_BG2="\e[102m"
 readonly PURPLE_BG="\e[48;5;99m"
-readonly UGLY_BG="\e[48;5;65m"
-readonly WBG="\e[107m"
+# readonly WBG="\e[107m"
 ### FG Colors
 readonly BLACK="\e[30m"
-readonly BLOODY="\e[38;5;1m"
 readonly BLUE="\e[34m"
+readonly DARK_GRAY="\e[90m"
 readonly GREEN1="\e[38;5;2m"
 readonly GREEN2="\e[92m"
 readonly RED="\e[1;91m"
 readonly YELLOW="\e[0;93m"
 readonly WHITE="\e[97m"
 ### Color bars
-declare -a -r COLORINGS=( c64 crown forest neon )
+declare -a -r COLORINGS=( c64 crown forest neon ) #=> enabled
 readonly WIB="${WHITE}${BLACK_BG}"
 ### Effects
 readonly BLINKI="\e[5m"
@@ -1059,39 +1219,44 @@ export DIALOGRC
 readonly DLG_OK=0
 readonly DLG_CANCEL=1
 readonly DLG_ESC=255
-### Checklists
-readonly BLINK_ID=1
-readonly SHUFFLE_ID=2
-readonly MOD_INFO_ID=3
+### Numbers
+declare -i -r MIN_HEIGHT=8
+readonly SHUFFLE_ID=1
 ### Symbolic TUI Colors
-readonly BAD="${RED}" # errors, missing
-readonly BOLD="${GREEN1}"
-readonly NORMAL="${GREEN1}"
-readonly PLAYING1="${WHITE}"
-readonly PLAYING2="${GREEN2}"
-readonly WARN="${YELLOW}" # failures, warnings
-### Dynamic effects
 declare KEY_COLOR= LABEL_COLOR= #=> post initialization
+readonly COLUMN1="${GREEN1}"
+readonly COLUMN2="${GREEN1}"
+readonly BAD="${RED}" # errors, missing
+readonly PLAYING="${WHITE}"
+readonly WARN="${YELLOW}" # failures, warnings
 ### Special chars
 readonly BGR="\u2261"
 readonly DASH="\u2500"
 readonly ESC=$(printf "\u1b")
+readonly HIDE_CURSOR="\e[?25l"
 ### Constant strings
-readonly COLLECTION_DIR="./collections"
-readonly COLLECTION1="favorites"
+readonly BROADCAST="${WHITE}${BLINKI}((${BLINKO} A ${BLINKI}))${BLINKO}"
 readonly FILENAME_CHAR="[a-zA-Z0-9\-]"
 readonly GG="https://www.google.com"
+readonly ICY_PLACEHOLDER="n/a"
 readonly PLAYLIST="Playlist"
+readonly PLAYLIST_KEY=""
 readonly PLAY_SIGN="PLAY >"
+readonly STREAM_GROUP_DIR="./streams"
+readonly STREAM_GROUP1="favorites"
+readonly TITLE_BAR="> ${PRODUCT} -=- ${COPYRIGHT}"
 ### Settings
-readonly PLAYER="mplayer"
-readonly PLAY_PARAMS="-msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg"
-readonly SETTINGS="./${APPLICATION}.cvs"
 declare -i -r CACHE_MIN=80
 declare -i -r CACHE_SIZE=16384
 declare -i -r COLORING_MAX=7
-declare LOG="./${APPLICATION}.log"
-declare BLINK= COLLECTION= COLORING= MOD_INFO= PLAYLIST_CACHE= PLAYLIST_DIR= RECENT_NAME= RECENT_URL= SHUFFLE= #=> post initialization
+readonly CODEX_FILE="./codex.txt"
+readonly PLAYER_CMD="mplayer"
+readonly PLAY_PARAMS="-msgcolor -quiet -noautosub -nolirc -ao alsa -afm ffmpeg"
+readonly SETTINGS="./${APPLICATION}.cvs"
+readonly LOG_DIR="./logs"
+declare LOG="${LOG_DIR}/${APPLICATION}.log"
+declare BLINK= CACHE_FILL= CACHE_SIZE_MSG= CODEX_RECORD= COLORING= PLAYER_VER= PLAYLIST_CACHE= PLAYLIST_DIR= 
+declare RECENT_NAME= RECENT_URL= SHUFFLE= STREAM_GROUP= STREAM_TITLE= STREAM_URL= VOLUME_PID=
 ### Error policy
 set -uo pipefail
 tryOn
