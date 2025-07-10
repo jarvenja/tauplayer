@@ -1,6 +1,6 @@
 ## Getting Started
 
-Latest Versions: [v0.5-beta](https://github.com/jarvenja/tauplayer/releases/tag/v0.5-beta) or under [Development](https://github.com/jarvenja/tauplayer/archive/main.zip) (recommended)
+Latest Versions: [v0.6-beta](https://github.com/jarvenja/tauplayer/releases/tag/v0.6-beta) or under [Development](https://github.com/jarvenja/tauplayer/archive/main.zip) (recommended)
 
 ### Dependencies
 
