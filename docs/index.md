@@ -15,7 +15,7 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 ## Usage
 
 <details>
-  <summary><b>Basic Terms</b></summary><br/>
+  <summary><b>Basic Terms</b></summary>
 If the technical things are not your cup of tea, understanding these terms may help:
 
 **Cache** is a memory buffer, which player reserves for audio playback. \
@@ -28,7 +28,7 @@ If the technical things are not your cup of tea, understanding these terms may h
 **(Text) terminal** is a text input and output environment, where you can start and run commands.
 </details>
 <details>
-  <summary><b>User Interface</b></summary><br/>
+  <summary><b>User Interface</b></summary>
   
 _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main menu_, \
 where you can select the action of your choice by pressing _Enter_ when _Select_ option is highlighted.
@@ -37,7 +37,7 @@ where you can select the action of your choice by pressing _Enter_ when _Select_
 
 </details>
 <details>
-  <summary><b>Changing Stream Group</b></summary><br/>
+  <summary><b>Changing Stream Group</b></summary>
 
   There is always one stream group active or selected. You can change it by selecting
   _Radio Streams_ from _Main menu_ and then _Change Stream Group_.
@@ -46,7 +46,7 @@ where you can select the action of your choice by pressing _Enter_ when _Select_
 
 </details>
 <details>
-  <summary><b>Playing radio streams in groups</b></summary><br/>
+  <summary><b>Playing radio streams in groups</b></summary>
   
   Select _Radio Streams_ from _Main menu_ followed by _Select Stream_, which lists all the streams in earlier selected group.
 
@@ -56,7 +56,7 @@ where you can select the action of your choice by pressing _Enter_ when _Select_
 
 </details>
 <details>
-  <summary><b>Playing local audio files from playlist</b></summary><br/>
+  <summary><b>Playing local audio files from playlist</b></summary>
 
   You can play local audio files by the following way:
 - Select _Playlists..._ from _Main menu_.
@@ -65,7 +65,7 @@ where you can select the action of your choice by pressing _Enter_ when _Select_
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs in question.
 </details>
 <details>
-  <summary><b>Playback via audio player</b></summary><br/>
+  <summary><b>Playback via audio player</b></summary>
 
   During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 
