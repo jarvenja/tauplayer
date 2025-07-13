@@ -20,13 +20,13 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 
 If the technical things are not your cup of tea, understanding these terms may help:
 
-- **Cache** is a memory buffer, which player reserves for audio playback. \
-- **Player** is audio player application, which tauplayer uses for playback. \
-- **Playlist** is a formatted list of links to audio files. Currently _tauplayer_ supports playlists only in _.m3u_ format. \
-- **Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists. \
-- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _stream groups_. \
-- **Stream Group** is a group of streams with named keys, which are stored in _/streams_ subdirectory under installation directory. \
-- **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_. \
+- **Cache** is a memory buffer, which player reserves for audio playback.
+- **Player** is audio player application, which tauplayer uses for playback.
+- **Playlist** is a formatted list of links to audio files. Currently _tauplayer_ supports playlists only in _.m3u_ format.
+- **Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists.
+- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _stream groups_.
+- **Stream Group** is a group of streams with named keys, which are stored in _/streams_ subdirectory under installation directory.
+- **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
 - **(Text) terminal** is a text input and output environment, where you can start and run commands.
 </details>
 
