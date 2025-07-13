@@ -16,7 +16,7 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 
 <details>
 
-<summary><b>Basic Terms</b></summary>
+<summary>Basic Terms</summary>
 
 If the technical things are not your cup of tea, understanding these terms may help:
 
@@ -64,7 +64,7 @@ Select the stream by name and then _Listen_ from opened menu. If stream is reach
 
 <details>
 
-<summary><b>Playing local audio files from playlist</summary>
+<summary>Playing local audio files from playlist</summary>
 
 You can play local audio files by the following way:
 - Select _Playlists..._ from _Main menu_.
