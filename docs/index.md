@@ -32,7 +32,7 @@ If the technical things are not your cup of tea, understanding these terms may h
 
 <details>
 
-<summary><b>User Interface</b></summary>
+<summary>User Interface</summary>
   
 _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main menu_, where you can select the action of your choice by pressing _Enter_ when _Select_ option is highlighted.
 
@@ -42,7 +42,7 @@ _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens 
 
 <details>
 
-<summary><b>Changing Stream Group</b></summary>
+<summary>Changing Stream Group</summary>
 
 There is always one stream group active or selected. You can change it by selecting _Radio Streams_ from _Main menu_ and then _Change Stream Group_.
 
@@ -52,7 +52,7 @@ There is always one stream group active or selected. You can change it by select
 
 <details>
 
-<summary><b>Playing radio streams in groups</b></summary>
+<summary>Playing radio streams in groups</summary>
   
 Select _Radio Streams_ from _Main menu_ followed by _Select Stream_, which lists all the streams in earlier selected group.
 
@@ -64,7 +64,7 @@ Select the stream by name and then _Listen_ from opened menu. If stream is reach
 
 <details>
 
-<summary><b>Playing local audio files from playlist</b></summary>
+<summary><b>Playing local audio files from playlist</summary>
 
 You can play local audio files by the following way:
 - Select _Playlists..._ from _Main menu_.
@@ -74,7 +74,8 @@ You can play local audio files by the following way:
 </details>
 
 <details>
-<summary><b>Playback via audio player</b></summary>
+  
+<summary>Playback via audio player</summary>
 
 During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 
