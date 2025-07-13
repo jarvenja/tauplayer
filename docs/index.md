@@ -20,14 +20,14 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 
 If the technical things are not your cup of tea, understanding these terms may help:
 
-**Cache** is a memory buffer, which player reserves for audio playback. \
-**Player** is audio player application, which tauplayer uses for playback. \
-**Playlist** is a formatted list of links to audio files. Currently _tauplayer_ supports playlists only in _.m3u_ format. \
-**Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists. \
-**(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _stream groups_. \
-**Stream Group** is a group of streams with named keys, which are stored in _/streams_ subdirectory under installation directory. \
-**tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_. \
-**(Text) terminal** is a text input and output environment, where you can start and run commands.
+- **Cache** is a memory buffer, which player reserves for audio playback. \
+- **Player** is audio player application, which tauplayer uses for playback. \
+- **Playlist** is a formatted list of links to audio files. Currently _tauplayer_ supports playlists only in _.m3u_ format. \
+- **Playlist Directory** is a parent directory under which _tauplayer_ scans available playlists. \
+- **(Radio) Stream URL** is a direct link to radio station's online stream. Same radio stream can be stored in many _stream groups_. \
+- **Stream Group** is a group of streams with named keys, which are stored in _/streams_ subdirectory under installation directory. \
+- **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_. \
+- **(Text) terminal** is a text input and output environment, where you can start and run commands.
 </details>
 
 <details>
@@ -67,10 +67,12 @@ Select the stream by name and then _Listen_ from opened menu. If stream is reach
 <summary>Playing local audio files from playlist</summary>
 
 You can play local audio files by the following way:
+
 - Select _Playlists..._ from _Main menu_.
 - _tauplayer_ asks the _Playlist Directory_ where to find the alternatives until you type a valid directory.
 - After you commit the directory _tauplayer_ shows playlist files found.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs in question.
+
 </details>
 
 <details>
@@ -84,4 +86,5 @@ During playback _tauplayer_ displays the most relevant key set, which you can dy
 _The picture above shows tauplayer playing a radio stream in Linux Mint._
 
 Please avoid pressing any unnecessary keys since they can confuse the player in some situations.
+
 </details>
