@@ -14,8 +14,7 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 
 ## Usage
 
-<details>
-
+<details open>
 <summary>Basic Terms</summary>
 
 If the technical things are not your cup of tea, understanding these terms may help:
@@ -28,10 +27,10 @@ If the technical things are not your cup of tea, understanding these terms may h
 - **Stream Group** is a group of streams with named keys, which are stored in _/streams_ subdirectory under installation directory.
 - **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
 - **(Text) terminal** is a text input and output environment, where you can start and run commands.
+
 </details>
 
-<details>
-
+<details open>
 <summary>User Interface</summary>
   
 _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main menu_, where you can select the action of your choice by pressing _Enter_ when _Select_ option is highlighted.
@@ -40,8 +39,7 @@ _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens 
 
 </details>
 
-<details>
-
+<details open>
 <summary>Changing Stream Group</summary>
 
 There is always one stream group active or selected. You can change it by selecting _Radio Streams_ from _Main menu_ and then _Change Stream Group_.
@@ -50,8 +48,7 @@ There is always one stream group active or selected. You can change it by select
 
 </details>
 
-<details>
-
+<details open>
 <summary>Playing radio streams in groups</summary>
   
 Select _Radio Streams_ from _Main menu_ followed by _Select Stream_, which lists all the streams in earlier selected group.
@@ -62,8 +59,7 @@ Select the stream by name and then _Listen_ from opened menu. If stream is reach
 
 </details>
 
-<details>
-
+<details open>
 <summary>Playing local audio files from playlist</summary>
 
 You can play local audio files by the following way:
@@ -75,8 +71,7 @@ You can play local audio files by the following way:
 
 </details>
 
-<details>
-  
+<details open>  
 <summary>Playback via audio player</summary>
 
 During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
