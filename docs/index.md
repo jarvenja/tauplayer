@@ -14,8 +14,7 @@ You can find the **Download** link at top of the [Getting Started](https://githu
 
 ## Usage
 
-<details>
-<summary>Basic Terms</summary>
+### Basic Terms
 
 If the technical things are not your cup of tea, understanding these terms may help:
 
@@ -28,39 +27,27 @@ If the technical things are not your cup of tea, understanding these terms may h
 - **tauplayer** is abbreviation for words _Terminal Audio Player_. At its most concrete minimum it is only one _Bash_ shell script file _(tauplayer.sh)_.
 - **(Text) terminal** is a text input and output environment, where you can start and run commands.
 
-</details>
+### User Interface
 
-<details>
-<summary>User Interface</summary>
-  
 _tauplayer_ is used via Text-based User Interface (TUI). When launched it opens the _Main menu_, where you can select the action of your choice by pressing _Enter_ when _Select_ option is highlighted.
 
 <img alt="main-menu" src="https://github.com/user-attachments/assets/d6aa8bc6-9736-4f23-9330-f48a8f8fcc1a" />
 
-</details>
-
-<details>
-<summary>Changing Stream Group</summary>
+### Changing Stream Group
 
 There is always one stream group active or selected. You can change it by selecting _Radio Streams_ from _Main menu_ and then _Change Stream Group_.
 
 <img width="80%" alt="change-stream-group" src="https://github.com/user-attachments/assets/2441c1de-7a2e-4581-a05c-e18e25be34c2" />
 
-</details>
+### Playing radio streams in groups
 
-<details>
-<summary>Playing radio streams in groups</summary>
-  
 Select _Radio Streams_ from _Main menu_ followed by _Select Stream_, which lists all the streams in earlier selected group.
 
 <img width="80%" alt="radio-streams" src="https://github.com/user-attachments/assets/f77b14cc-6351-4e5b-be35-03ba733b0632" />
 
 Select the stream by name and then _Listen_ from opened menu. If stream is reachable _tauplayer_ opens playback screen for it.
 
-</details>
-
-<details>
-<summary>Playing local audio files from playlist</summary>
+Playing local audio files from playlist
 
 You can play local audio files by the following way:
 
@@ -69,10 +56,7 @@ You can play local audio files by the following way:
 - After you commit the directory _tauplayer_ shows playlist files found.
 - Select a playlist file to Play, and _tauplayer_ starts playing the list of songs in question.
 
-</details>
-
-<details>  
-<summary>Playback via audio player</summary>
+### Playback via audio player
 
 During playback _tauplayer_ displays the most relevant key set, which you can dynamically control the parameters of the player.
 
@@ -81,5 +65,3 @@ During playback _tauplayer_ displays the most relevant key set, which you can dy
 _The picture above shows tauplayer playing a radio stream in Linux Mint._
 
 Please avoid pressing any unnecessary keys since they can confuse the player in some situations.
-
-</details>
